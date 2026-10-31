@@ -1,0 +1,3 @@
+# Container and payload
+
+AKCP 1.0 uses a 64-byte big-endian header followed by one authenticated ciphertext region. See [SPECIFICATION.md](../SPECIFICATION.md) for the normative byte table. It is not renamed JSON and must not be parsed by extension or Magic alone. Readers should stream or cap input at 16 MiB, reject integer overflow and reject trailing or missing data. Optional Level 3 embedded recognition must isolate the full container before normal validation.

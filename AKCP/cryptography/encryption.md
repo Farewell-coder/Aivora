@@ -1,0 +1,3 @@
+# Cryptography
+
+AKCP crypto suite 1 uses Argon2id (64 MiB, 3 iterations, parallelism 1) and AES-256-GCM. A fresh CSPRNG 256-bit credential, 128-bit salt and 96-bit nonce are required per export. The full 64-byte header is AAD. GCM supplies a 128-bit tag at the end of the ciphertext. Never hardcode keys, reuse a nonce with a key, accept partial credential matches, or parse unauthenticated plaintext. Known-answer tests use only synthetic data.

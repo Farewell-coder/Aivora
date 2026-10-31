@@ -1,0 +1,4 @@
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
+-keep class app.aivora.vault.protocol.** { *; }
+-dontwarn org.bouncycastle.**
+-dontwarn com.google.errorprone.annotations.**

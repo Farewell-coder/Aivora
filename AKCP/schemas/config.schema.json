@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AKCP config-set 1",
+  "type": "object",
+  "required": ["schema", "configs"],
+  "properties": {
+    "schema": {"const": "akcp.config-set/1"},
+    "configs": {"type": "array", "items": {
+      "type": "object",
+      "required": ["config_name", "provider", "api_key", "endpoint"],
+      "properties": {
+        "config_name": {"type": "string", "minLength": 1},
+        "provider": {"type": "string", "minLength": 1},
+        "api_key": {"type": "string", "minLength": 1},
+        "endpoint": {"type": "string", "minLength": 1},
+        "models": {"type": "array", "items": {"type": "string"}},
+        "default_model": {"type": "string"},
+        "notes": {"type": "string"},
+        "enabled": {"type": "boolean"},
+        "extensions": {"type": "object"}
+      }
+    }}
+  }
+}
