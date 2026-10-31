@@ -128,6 +128,7 @@ object Akcp {
             putInt(M_KIB); putInt(ITERATIONS); putInt(PARALLELISM); putInt(payloadLength)
             put(salt); put(nonce); putShort(0)
         }.array()
+    internal fun deriveForBackup(credential: String, salt: ByteArray): ByteArray = derive(credential.replace("-", "").uppercase(), salt)
     private fun derive(credential: String, salt: ByteArray): ByteArray {
         val generator = Argon2BytesGenerator()
         generator.init(Argon2Parameters.Builder(Argon2Parameters.ARGON2_id).withSalt(salt).withMemoryAsKB(M_KIB).withIterations(ITERATIONS).withParallelism(PARALLELISM).build())

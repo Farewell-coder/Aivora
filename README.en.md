@@ -12,7 +12,8 @@ Aivora is a local-first Android AI service configuration manager built with Kotl
 - Expandable per-configuration model diagnostics: fetch `/models`, test every model serially, show status, HTTP code, latency and response/error summary, with cancellation and per-model retry.
 - Uses OpenAI-compatible `/models` and `/chat/completions`; real tests may consume API quota.
 - Authenticated `.aivora` import and per-configuration export, connection checks, independent Base32 credentials and user-selected destinations.
-- Material 3 light/dark/system themes, Lucide icons and a floating capsule navigation bar.
+- Material 3 light/dark/system themes, Lucide icons, three destination navigation and system authentication.
+- Aivora-specific encrypted full backups in Settings; cross-device restores re-encrypt secrets with the new device key after an overwrite confirmation.
 
 No account, cloud synchronization, key proxy, local API server or Aivora backend is used.
 
@@ -32,4 +33,4 @@ The [AKCP directory](AKCP/) contains the specification, [Chinese adaptation guid
 
 Aivora is distributed under **AGPL-3.0-only**. See [LICENSE](LICENSE).
 
-Version: 0.0.2. AKCP: 1.0. Crypto suite: 1. These versions evolve independently.
+Version: 0.0.3. AKCP: 1.0. Crypto suite: 1. These versions evolve independently.

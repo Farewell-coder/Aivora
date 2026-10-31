@@ -2,6 +2,7 @@ package app.aivora.vault.data
 
 import android.content.Context
 import androidx.room.*
+import androidx.room.withTransaction
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import app.aivora.vault.protocol.Akcp
@@ -32,6 +33,12 @@ data class ExportRecord(
 @Dao interface VaultDao {
     @Query("SELECT * FROM service_configs ORDER BY createdAt DESC") fun configs(): Flow<List<ServiceConfig>>
     @Query("SELECT * FROM service_configs WHERE id=:id") suspend fun byId(id: Long): ServiceConfig?
+    @Query("SELECT * FROM service_configs") suspend fun allConfigs(): List<ServiceConfig>
+    @Query("SELECT * FROM export_records") suspend fun allExports(): List<ExportRecord>
+    @Query("DELETE FROM service_configs") suspend fun clearConfigs()
+    @Query("DELETE FROM export_records") suspend fun clearExports()
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun saveConfigs(configs: List<ServiceConfig>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun saveExports(records: List<ExportRecord>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun save(config: ServiceConfig): Long
     @Delete suspend fun delete(config: ServiceConfig)
     @Query("UPDATE service_configs SET isDefault=0") suspend fun clearDefaults()
@@ -74,6 +81,17 @@ class VaultRepository(context: Context) {
             }
         }).build()
     val dao = db.dao(); val crypto = LocalCrypto(context)
+    suspend fun createBackup(theme: String) = app.aivora.vault.protocol.Backup.export(theme,
+        dao.allConfigs().map { app.aivora.vault.protocol.Backup.BackupConfig(it.name, it.provider, if (it.encryptedKey.isEmpty()) "" else crypto.decrypt(it.encryptedKey), it.endpoint, it.models, it.defaultModel, it.notes, it.enabled, it.createdAt, it.lastCheckedAt, it.checkStatus, it.httpStatus, it.extensionsJson, it.modelResultsJson) },
+        dao.allExports().map { app.aivora.vault.protocol.Backup.BackupExport(it.fileName, crypto.decrypt(it.encryptedCredential), it.configCount, it.exportedAt) })
+    suspend fun replaceAll(payload: app.aivora.vault.protocol.Backup.Payload, themePrefs: android.content.SharedPreferences) {
+        val configs = payload.configs.map { ServiceConfig(name = it.name, provider = it.provider, encryptedKey = if (it.apiKey.isEmpty()) "" else crypto.encrypt(it.apiKey), endpoint = it.endpoint, models = it.models, defaultModel = it.defaultModel, notes = it.notes, enabled = it.enabled, createdAt = it.createdAt, lastCheckedAt = it.lastCheckedAt, checkStatus = it.checkStatus, httpStatus = it.httpStatus, extensionsJson = it.extensionsJson, modelResultsJson = it.modelResultsJson) }
+        val exports = payload.exports.map { ExportRecord(fileName = it.fileName, encryptedCredential = crypto.encrypt(it.credential), configCount = it.configCount, exportedAt = it.exportedAt) }
+        db.withTransaction {
+            dao.clearConfigs(); dao.clearExports(); dao.saveConfigs(configs); dao.saveExports(exports)
+        }
+        themePrefs.edit().putString("theme", payload.theme).apply()
+    }
     fun toAkcp(config: ServiceConfig) = Akcp.Config(config.name, config.provider,
         if (config.encryptedKey.isEmpty()) "" else crypto.decrypt(config.encryptedKey),
         config.endpoint, emptyList(), "", config.notes, config.enabled,
