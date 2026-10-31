@@ -30,7 +30,7 @@ data class ExportRecord(
     val configCount: Int, val exportedAt: Long = System.currentTimeMillis()
 )
 @Dao interface VaultDao {
-    @Query("SELECT * FROM service_configs ORDER BY isDefault DESC, createdAt DESC") fun configs(): Flow<List<ServiceConfig>>
+    @Query("SELECT * FROM service_configs ORDER BY createdAt DESC") fun configs(): Flow<List<ServiceConfig>>
     @Query("SELECT * FROM service_configs WHERE id=:id") suspend fun byId(id: Long): ServiceConfig?
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun save(config: ServiceConfig): Long
     @Delete suspend fun delete(config: ServiceConfig)
@@ -74,9 +74,10 @@ class VaultRepository(context: Context) {
             }
         }).build()
     val dao = db.dao(); val crypto = LocalCrypto(context)
-    fun toAkcp(config: ServiceConfig) = Akcp.Config(config.name, config.provider, crypto.decrypt(config.encryptedKey),
-        config.endpoint, config.models.split(',').map(String::trim).filter(String::isNotEmpty), config.defaultModel,
-        config.notes, config.enabled, kotlinx.serialization.json.Json.parseToJsonElement(config.extensionsJson).jsonObject)
+    fun toAkcp(config: ServiceConfig) = Akcp.Config(config.name, config.provider,
+        if (config.encryptedKey.isEmpty()) "" else crypto.decrypt(config.encryptedKey),
+        config.endpoint, emptyList(), "", config.notes, config.enabled,
+        kotlinx.serialization.json.Json.parseToJsonElement(config.extensionsJson).jsonObject)
     fun fromAkcp(config: Akcp.Config) = ServiceConfig(name = config.config_name, provider = config.provider,
         encryptedKey = crypto.encrypt(config.api_key), endpoint = config.endpoint, models = config.models.joinToString(","),
         defaultModel = config.default_model, notes = config.notes, enabled = config.enabled, extensionsJson = config.extensions.toString())
