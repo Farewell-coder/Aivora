@@ -26,10 +26,9 @@ No account, no cloud sync, no key proxy, no backend service. Your data stays on 
 - [Features](#features)
 - [Download and install](#download-and-install)
 - [AEX exchange protocol](#aex-exchange-protocol)
-- [For third-party developers](#for-third-party-developers)
-- [Ecosystem](#ecosystem)
+- [Third-party integration](#third-party-integration)
 - [Contributing](#contributing)
-- [Changelog](#changelog)
+- [Changelog](CHANGELOG.en.md)
 - [License](#license)
 
 ## Overview
@@ -162,34 +161,22 @@ A receiver only needs to:
 
 No SDK, account, server or source code needed.
 
-## For third-party developers
+## Third-party integration
 
-- **Protocol overview**: [protocol/README.md](protocol/README.md)
-- **Full specification**: [protocol/AEX-SPECIFICATION.md](protocol/AEX-SPECIFICATION.md)
-- **Crypto and security**: [protocol/AEX-SECURITY.md](protocol/AEX-SECURITY.md)
-- **Payload schema**: [protocol/AEX-SCHEMA.json](protocol/AEX-SCHEMA.json)
-- **Adapter guide**: [protocol/AEX-ADAPTER-GUIDE.md](protocol/AEX-ADAPTER-GUIDE.md)
-- **Test vectors**: [protocol/AEX-TEST-VECTORS.md](protocol/AEX-TEST-VECTORS.md)
-- **Official test vectors**: [protocol/test-vectors/](protocol/test-vectors/)
-- **Protocol changelog**: [protocol/AEX-CHANGELOG.md](protocol/AEX-CHANGELOG.md)
-- **Examples**: [single](protocol/examples/single-profile.md) · [multiple](protocol/examples/multiple-profiles.md) · [encrypted package](protocol/examples/encrypted-package.md)
+Want your app to read configurations exported by Aivora? Everything you need is under [protocol/](protocol/README.md). No Aivora SDK, no account, no server, and no need to read Aivora's source.
 
-## Ecosystem
-
-AEX 1.0 is not yet implemented in any Aivora release, so **no third-party software is currently listed as supported**.
-
-The adapter registry and submission template live in [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md). Every entry is labelled with a status:
-
-| Status | Meaning |
+| Entry point | What it covers |
 |---|---|
-| Verified | Maintainers reproduced the import with the public test vectors and have a record |
-| Self-declared | The submitter reports completion; not independently verified |
-| In progress | Known to be under development |
-| Planned | Intent recorded, work not started |
+| [Protocol overview](protocol/README.md) | Start here: what the protocol is, how to use it, how to read the docs |
+| [Specification](protocol/AEX-SPECIFICATION.md) | Container layout, field definitions, versioning, error codes |
+| [Adapter guide](protocol/AEX-ADAPTER-GUIDE.md) | Step-by-step integration, Android receiver advice and common pitfalls |
+| [Security model](protocol/AEX-SECURITY.md) | Crypto parameters, key derivation, boundaries, and what not to do |
+| [Payload schema](protocol/AEX-SCHEMA.json) | JSON Schema for the payload |
+| [Test and acceptance](protocol/AEX-TEST-VECTORS.md) | Acceptance checklist and negative cases |
+| [Official test vectors](protocol/test-vectors/) | Ready to run against your implementation |
+| [Examples](protocol/examples/) | Single, multiple and encrypted-package walkthroughs |
 
-Unverified projects are never marked as fully supported.
-
-Software that does not adapt AEX is unaffected: nothing breaks, it simply cannot receive `.akcp` files directly. Aivora does not require any software to adapt.
+**Adapters and how to register** are tracked in [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md). No third-party app has completed integration yet, so the list is empty — submissions welcome.
 
 ## Contributing
 
@@ -218,33 +205,9 @@ Requires JDK 17 and Android SDK 35. Make sure unit tests pass and avoid unrelate
 
 ## Changelog
 
-### 0.0.5
+What each release added, changed and fixed is recorded in the changelog, rather than piled up here.
 
-- **Fixed**: plain `http://` third-party endpoints could not fetch models. The request was blocked by Android's cleartext traffic policy (`CLEARTEXT communication not permitted by network security policy`) and never reached the server. A network security config now permits cleartext HTTP while keeping system certificate validation unchanged.
-- **AEX protocol**: implemented AEX 1.0 (`.akcp`, AES-256-GCM with PBKDF2-HMAC-SHA256 at 600,000 iterations, header as AAD). Exports go through a FileProvider into the system share sheet and support single, multi-selected and full-set scopes.
-- **Docs**: added the `protocol/` directory and rewrote the main README.
-
-### 0.0.4
-
-- Fixed the system back button exiting the app from the About and Protocol screens.
-- Model fetch failures now show the real HTTP status and server message instead of a generic "invalid key".
-- Leading and trailing whitespace in keys is stripped before saving and sending.
-- Editing a configuration now clears stale models and stale results.
-- Fixed a false "copied" toast on empty export credentials, a null pointer on per-model retry, and the UI freezing after a biometric failure.
-- APK size reduced from 3,984,449 to 2,705,722 bytes (−32.1%) with no feature or crypto changes.
-
-### 0.0.3
-
-- Added Aivora-specific encrypted full backup and cross-device restore.
-- Configuration card actions changed to icon buttons.
-
-### 0.0.2
-
-- Refined the create/edit flow and interface details.
-
-### 0.0.1
-
-- First release: encrypted local configuration management, key diagnostics, configuration import and export.
+See [Changelog](CHANGELOG.en.md).
 
 ## License
 

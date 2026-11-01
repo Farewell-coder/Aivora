@@ -26,10 +26,9 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 - [功能展示](#功能展示)
 - [下载与安装](#下载与安装)
 - [AEX 配置交换协议](#aex-配置交换协议)
-- [第三方开发者入口](#第三方开发者入口)
-- [生态适配](#生态适配)
+- [第三方适配](#第三方适配)
 - [参与贡献](#参与贡献)
-- [更新日志](#更新日志)
+- [更新日志](CHANGELOG.md)
 - [许可证](#许可证)
 
 ## 项目介绍
@@ -162,34 +161,22 @@ AEX 是 Aivora 的**完整、独立、唯一**的配置交换协议。不存在�
 
 不需要 Aivora SDK、账号、服务器或源码。
 
-## 第三方开发者入口
+## 第三方适配
 
-- **协议总览**：[protocol/README.md](protocol/README.md)
-- **完整规范**：[protocol/AEX-SPECIFICATION.md](protocol/AEX-SPECIFICATION.md)
-- **加密与安全**：[protocol/AEX-SECURITY.md](protocol/AEX-SECURITY.md)
-- **数据结构 Schema**：[protocol/AEX-SCHEMA.json](protocol/AEX-SCHEMA.json)
-- **适配指南**：[protocol/AEX-ADAPTER-GUIDE.md](protocol/AEX-ADAPTER-GUIDE.md)
-- **测试与验证**：[protocol/AEX-TEST-VECTORS.md](protocol/AEX-TEST-VECTORS.md)
-- **官方测试向量**：[protocol/test-vectors/](protocol/test-vectors/)
-- **协议更新记录**：[protocol/AEX-CHANGELOG.md](protocol/AEX-CHANGELOG.md)
-- **示例**：[单配置](protocol/examples/single-profile.md) · [多配置](protocol/examples/multiple-profiles.md) · [加密包结构](protocol/examples/encrypted-package.md)
+想让你的软件直接读取 Aivora 导出的配置？全部依据都在 [protocol/](protocol/README.md) 目录，不需要 Aivora SDK、账号或服务器，也不需要阅读 Aivora 源码。
 
-## 生态适配
-
-AEX 1.0 已随 Aivora 发布版本实现，可以开始联调。**目前尚无第三方软件完成适配**，列表为空。
-
-适配列表与登记格式见 [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md)。列表中的项目会明确标注适配状态：
-
-| 状态 | 含义 |
+| 入口 | 说明 |
 |---|---|
-| 已验证 | 维护者用公开测试向量实际跑通，且有可复现记录 |
-| 自行声明 | 提交方声明完成适配，未独立验证 |
-| 开发中 | 已知正在适配 |
-| 计划中 | 已登记意向 |
+| [协议总览](protocol/README.md) | 先看这个：协议是什么、怎么用、文档怎么读 |
+| [完整规范](protocol/AEX-SPECIFICATION.md) | 容器结构、字段定义、版本规则、错误码 |
+| [适配指南](protocol/AEX-ADAPTER-GUIDE.md) | 分步接入流程，含 Android 接收端建议与常见坑 |
+| [加密与安全](protocol/AEX-SECURITY.md) | 加密参数、密钥派生、安全边界与不能做的事 |
+| [数据结构 Schema](protocol/AEX-SCHEMA.json) | 载荷 JSON Schema |
+| [测试与验收](protocol/AEX-TEST-VECTORS.md) | 验收清单与负向用例 |
+| [官方测试向量](protocol/test-vectors/) | 可直接拿来验证你的实现 |
+| [示例](protocol/examples/) | 单配置、多配置、加密包三个完整示例 |
 
-未经核实的项目不会被标记为已完整支持。
-
-未适配 AEX 的软件不受影响，原有功能保持不变，只是无法直接接收 `.akcp` 文件。Aivora 不强制任何软件适配。
+**已适配列表与登记方式**见 [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md)。目前尚无第三方软件完成适配，列表为空——欢迎提交。
 
 ## 参与贡献
 
@@ -218,33 +205,9 @@ cd Aivora
 
 ## 更新日志
 
-### 0.0.5
+每个版本添了什么、改了什么、修好了什么，都认真记在更新记录里，不再在这里堆成一长串。
 
-- **修复**：使用 `http://` 的第三方 Endpoint 无法拉取模型的问题。此前请求会被 Android 明文流量策略拦截，错误提示为 `CLEARTEXT communication not permitted by network security policy`，请求根本没有到达服务端。现通过网络安全配置文件允许明文 HTTP，同时保持系统证书校验不变。
-- **AEX 协议**：实现 AEX 1.0（`.akcp`，AES-256-GCM + PBKDF2-HMAC-SHA256 600000 次迭代，头部作为 AAD），导出后经 FileProvider 调用系统分享面板，支持单配置、多选与全量三种范围。
-- **文档**：新增 AEX 协议文档目录 `protocol/`，重构主 README。
-
-### 0.0.4
-
-- 修复系统返回键在「关于」「适配协议」页直接退出应用的问题。
-- 模型拉取失败时显示真实 HTTP 状态与服务端返回信息，不再笼统提示“密钥无效”。
-- 密钥首尾空白字符在保存与发送前自动清理。
-- 编辑配置后清空旧模型与旧检测结果，避免残留错误。
-- 修复导出凭证为空仍提示“已复制”、单模型重测时的空指针、生物识别失败后界面卡死等问题。
-- 安装包体积从 3,984,449 字节降至 2,705,722 字节（约 −32.1%），未减少功能、未更换加密实现。
-
-### 0.0.3
-
-- 新增 Aivora 专用全量加密备份与跨设备恢复。
-- 优化配置卡片操作区布局，改为图标按钮。
-
-### 0.0.2
-
-- 完善配置新建与编辑流程、界面细节。
-
-### 0.0.1
-
-- 首个版本：本地加密配置管理、密钥检测、配置导入导出。
+欢迎前往 [更新记录](CHANGELOG.md) 查看。
 
 ## 许可证
 
