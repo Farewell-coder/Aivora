@@ -23,7 +23,7 @@ class KeyDiagnostics {
             .url(config.endpoint.trim().trimEnd('/') + "/models")
             .header("Authorization", "Bearer $key")
             .header("Accept", "application/json")
-            .header("User-Agent", "Aivora/0.0.4 (Android; OpenAI-compatible)").get().build()
+            .header("User-Agent", "Aivora/0.0.5 (Android; OpenAI-compatible)").get().build()
         client.newCall(request).execute().use { response ->
             val body = response.body?.string().orEmpty()
             if (!response.isSuccessful) throw DiagnosticException("模型拉取失败（HTTP ${response.code}）：${errorMessage(response.code, body)}")
@@ -45,7 +45,7 @@ class KeyDiagnostics {
         val request = Request.Builder().url(config.endpoint.trim().trimEnd('/') + "/chat/completions")
             .header("Authorization", "Bearer $key")
             .header("Accept", "application/json")
-            .header("User-Agent", "Aivora/0.0.4 (Android; OpenAI-compatible)")
+            .header("User-Agent", "Aivora/0.0.5 (Android; OpenAI-compatible)")
             .post(payload.toRequestBody("application/json".toMediaType())).build()
         val started = System.nanoTime()
         try {

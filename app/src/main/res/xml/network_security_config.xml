@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Aivora 的 Endpoint 由用户自行填写，自建网关、内网服务常使用明文 HTTP。
+         允许明文流量，但证书校验仍保持系统默认，不信任用户证书、不关闭 TLS 验证。 -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

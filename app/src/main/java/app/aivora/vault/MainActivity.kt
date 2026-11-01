@@ -249,7 +249,7 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 }
 @Composable fun AboutPage(protocol: () -> Unit) {
     val uri = LocalUriHandler.current
-    AppCard { Text("Aivora", fontSize = 25.sp, fontWeight = FontWeight.Bold); Text("本地 AI 配置管理工具\n版本 0.0.4 · AKCP 1.0\nAGPL-3.0-only\n数据仅保存在当前设备，不依赖云端账户。") }
+    AppCard { Text("Aivora", fontSize = 25.sp, fontWeight = FontWeight.Bold); Text("本地 AI 配置管理工具\n版本 0.0.5 · AKCP 1.0\nAGPL-3.0-only\n数据仅保存在当前设备，不依赖云端账户。") }
     AppCard { Text("开放生态", fontWeight = FontWeight.Bold); Spacer(Modifier.height(12.dp)); LabelButton(protocol, Lucide.File, "适配协议", Modifier.fillMaxWidth()); Spacer(Modifier.height(8.dp)); LabelButton({ uri.openUri("https://github.com/Farewell-coder/Aivora") }, Lucide.Github, "GitHub 项目", Modifier.fillMaxWidth()) }
     AppCard { Text("安全边界", fontWeight = FontWeight.Bold); Text("凭证用于加密导出文件。第三方成功解密后可接触明文 API Key；请仅向可信服务提交密钥。", fontSize = 12.sp) }
 }
