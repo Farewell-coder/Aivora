@@ -30,6 +30,8 @@ object Lucide {
     val Search = icon("M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16", "m21 21-4.3-4.3")
     val Import = icon("M12 3v12", "m7 10 5 5 5-5", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4")
     val Export = icon("M12 15V3", "m7 8 5-5 5 5", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4")
+    /** Lucide "share" 图标：方框上方三个连接点。 */
+    val Share = icon("M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8", "M16 6l-4-4-4 4", "M12 2v13")
     val Edit = icon("M12 20h9", "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z")
     val Trash = icon("M3 6h18", "M8 6V4h8v2", "m19 6-1 14H6L5 6", "M10 11v5", "M14 11v5")
     val Copy = icon("M9 9h11v11H9z", "M4 15H3V4h11v1")

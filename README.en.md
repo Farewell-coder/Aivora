@@ -123,8 +123,10 @@ Planned flow:
 Configuration → Export → generate .akcp (independent credential) → system share sheet → target app
 ```
 
+- **Two entry points**: Export saves to a user-chosen location, Share opens the system share sheet; both produce byte-identical `.akcp` files
 - Uses the native Android Sharesheet; no imitation share panel is drawn
-- The file is written to the app-private cache and shared through a FileProvider `content://` URI; real paths are never exposed
+- Sharing writes the file to the app-private cache and hands it out through a FileProvider `content://` URI; real paths are never exposed
+- The file carries no credential: the recipient **must enter the 52-character credential separately** to decrypt it, and it is never sent alongside the file
 - The user is warned that the file contains a complete API key
 
 ### Single and batch

@@ -210,6 +210,7 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
     // key 包含配置的全部可见字段，配置被修改后必须换用新的凭证与文件。
     var exported by remember { mutableStateOf<Aex.Export?>(null) }
     var generating by remember { mutableStateOf(false) }
+    var pendingSave by remember { mutableStateOf<ByteArray?>(null) }
     LaunchedEffect(config.id, config.name, config.provider, config.endpoint, config.encryptedKey, config.notes, config.models, config.defaultModel) {
         exported = null
         if (config.endpoint.isBlank() || config.encryptedKey.isBlank()) return@LaunchedEffect
@@ -218,32 +219,60 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
         finally { generating = false }
     }
     val displayCredential = exported?.credential
+    val fileName = remember(config.name) { Aex.sanitizeFileName(config.name) }
+    // 「导出」= 用户自选位置保存到本地；「分享」= 交给系统分享面板。两者生成的文件完全相同。
+    val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(Aex.MIME_TYPE)) { uri ->
+        val bytes = pendingSave; pendingSave = null
+        if (uri == null || bytes == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("无法写入文件")
+                    repo.dao.recordExport(ExportRecord(fileName = fileName, encryptedCredential = repo.crypto.encrypt(displayCredential.orEmpty()), configCount = 1))
+                }
+                close(); toast("已导出 .akcp 文件")
+            } catch (e: Exception) { toast(e.message ?: "导出失败") }
+        }
+    }
     AlertDialog(close, title = { Text("导出「${config.name}」") }, text = {
         Column {
-            Text("将通过系统分享面板发送一个 .akcp 文件。导入方需要下面的凭证。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("保存到本机，或直接分享给其他软件。接收方必须输入下面的凭证才能读取配置。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Surface(Modifier.fillMaxWidth().padding(vertical = 14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(14.dp)) {
                 SelectionContainer { Text(displayCredential ?: if (generating) "正在生成凭证…" else "请先填写 Endpoint 和 API Key", Modifier.padding(14.dp), style = MaterialTheme.typography.bodySmall) }
             }
+            Text("文件已加密，凭证单独传递；不会随文件一起发出。", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("该文件包含完整 API Key，接收应用解密后可读取明文，请仅分享给可信应用。", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+            Spacer(Modifier.height(8.dp))
             LabelButton({ val value = displayCredential; if (value.isNullOrBlank()) toast("请先填写 Endpoint 和 API Key") else { clipboard.setText(AnnotatedString(value)); toast("凭证已复制") } }, Lucide.Copy, "复制凭证")
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button({ scope.launch {
+                    if (working) return@launch
+                    try {
+                        if (config.endpoint.isBlank() || config.encryptedKey.isBlank()) error("请先填写 Endpoint 和 API Key")
+                        val data = exported ?: error("导出内容生成失败，请重新打开导出")
+                        working = true; pendingSave = data.bytes; saveLauncher.launch(fileName)
+                    } catch (e: Exception) { toast(e.message ?: "导出失败") } finally { working = false }
+                } }, Modifier.weight(1f), enabled = !working && !generating && exported != null) {
+                    if (generating) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else { Icon(Lucide.Export, null, Modifier.size(16.dp)); Spacer(Modifier.width(6.dp)); Text("导出") }
+                }
+                Button({ scope.launch {
+                    if (working) return@launch
+                    working = true
+                    try {
+                        if (config.endpoint.isBlank() || config.encryptedKey.isBlank()) error("请先填写 Endpoint 和 API Key")
+                        val data = exported ?: error("导出内容生成失败，请重新打开导出")
+                        val prepared = AexShare.prepare(context, data, fileName, "Aivora 配置：${config.name}").getOrElse { error(it.message ?: "无法生成临时文件") }
+                        repo.dao.recordExport(ExportRecord(fileName = fileName, encryptedCredential = repo.crypto.encrypt(data.credential), configCount = data.profileCount))
+                        context.startActivity(prepared.first)
+                        close(); toast("已生成 .akcp 文件，请选择接收应用")
+                    } catch (e: Exception) { toast(e.message ?: "分享失败") } finally { working = false }
+                } }, Modifier.weight(1f), enabled = !working && !generating && exported != null) {
+                    if (working || generating) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else { Icon(Lucide.Share, null, Modifier.size(16.dp)); Spacer(Modifier.width(6.dp)); Text("分享") }
+                }
+            }
         }
-    }, confirmButton = {
-        Button({ scope.launch {
-            if (working) return@launch
-            working = true
-            try {
-                if (config.endpoint.isBlank() || config.encryptedKey.isBlank()) error("请先填写 Endpoint 和 API Key")
-                val data = exported ?: error("导出内容生成失败，请重新打开导出")
-                val fileName = config.name.replace(Regex("[^\\p{L}\\p{N}_-]"), "_").ifBlank { "Aivora" } + Aex.EXTENSION
-                val prepared = AexShare.prepare(context, data, fileName, "Aivora 配置：${config.name}").getOrElse { error(it.message ?: "无法生成临时文件") }
-                repo.dao.recordExport(ExportRecord(fileName = fileName, encryptedCredential = repo.crypto.encrypt(data.credential), configCount = data.profileCount))
-                context.startActivity(prepared.first)
-                close(); toast("已生成 .akcp 文件，请选择接收应用")
-            } catch (e: Exception) { toast(e.message ?: "导出失败") } finally { working = false }
-        } }, enabled = !working && !generating && exported != null) {
-            if (working || generating) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else { Icon(Lucide.Export, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("分享") }
-        }
-    }, dismissButton = { TextButton(close, enabled = !working) { Text("取消") } })
+    }, confirmButton = { TextButton({ close() }, enabled = !working) { Text("关闭") } }, dismissButton = null)
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun ConfigEditor(old: ServiceConfig?, repo: VaultRepository, close: () -> Unit, toast: (String) -> Unit) {
