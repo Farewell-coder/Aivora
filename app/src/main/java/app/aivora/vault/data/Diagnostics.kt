@@ -18,12 +18,15 @@ class KeyDiagnostics {
         .build()
 
     suspend fun fetchModels(config: ServiceConfig, key: String): List<String> = withContext(Dispatchers.IO) {
+        val key = key.trim()
         val request = Request.Builder()
             .url(config.endpoint.trim().trimEnd('/') + "/models")
-            .header("Authorization", "Bearer $key").get().build()
+            .header("Authorization", "Bearer $key")
+            .header("Accept", "application/json")
+            .header("User-Agent", "Aivora/0.0.4 (Android; OpenAI-compatible)").get().build()
         client.newCall(request).execute().use { response ->
             val body = response.body?.string().orEmpty()
-            if (!response.isSuccessful) throw DiagnosticException(errorMessage(response.code, body))
+            if (!response.isSuccessful) throw DiagnosticException("模型拉取失败（HTTP ${response.code}）：${errorMessage(response.code, body)}")
             val data = JSONObject(body).optJSONArray("data")
                 ?: throw DiagnosticException("模型列表格式不受支持")
             buildList {
@@ -35,11 +38,14 @@ class KeyDiagnostics {
     }
 
     suspend fun testModel(config: ServiceConfig, key: String, model: String): ModelResult = withContext(Dispatchers.IO) {
+        val key = key.trim()
         val payload = JSONObject().put("model", model)
             .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", "Hi")))
             .put("max_tokens", 1).put("stream", false).toString()
         val request = Request.Builder().url(config.endpoint.trim().trimEnd('/') + "/chat/completions")
             .header("Authorization", "Bearer $key")
+            .header("Accept", "application/json")
+            .header("User-Agent", "Aivora/0.0.4 (Android; OpenAI-compatible)")
             .post(payload.toRequestBody("application/json".toMediaType())).build()
         val started = System.nanoTime()
         try {
@@ -76,7 +82,8 @@ class KeyDiagnostics {
             val json = JSONObject(body); json.optJSONObject("error")?.optString("message")?.ifBlank { null } ?: json.optString("message")
         } catch (_: Exception) { "" }
         val reason = when (code) {
-            401, 403 -> if (Regex("quota|insufficient|balance", RegexOption.IGNORE_CASE).containsMatchIn(body)) "余额或配额不足" else "密钥无效或模型无权限"
+            401 -> if (Regex("quota|insufficient|balance", RegexOption.IGNORE_CASE).containsMatchIn(body)) "余额或配额不足" else "密钥无效或已过期"
+            403 -> if (Regex("quota|insufficient|balance", RegexOption.IGNORE_CASE).containsMatchIn(body)) "余额或配额不足" else "服务端拒绝访问：请检查密钥权限、令牌分组或访问策略"
             404 -> "模型不存在或 Endpoint 不支持该请求"
             429 -> if (Regex("quota|insufficient|balance", RegexOption.IGNORE_CASE).containsMatchIn(body)) "余额或配额不足" else "请求频率受限"
             400, 422 -> "模型或请求参数不受支持"

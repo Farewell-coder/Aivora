@@ -12,8 +12,9 @@ android {
         applicationId = "app.aivora.vault"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.0.3"
+        versionCode = 4
+        ndk { abiFilters += "arm64-v8a" }
+        versionName = "0.0.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -29,7 +30,7 @@ android {
         unitTests.all { it.systemProperty("akcp.interop", System.getProperty("akcp.interop")) }
     }
     buildFeatures { compose = true }
-    packaging { resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*") }
+    packaging { resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*", "org/bouncycastle/pqc/**", "org/bouncycastle/x509/CertPathReviewerMessages*.properties") }
 }
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")

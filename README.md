@@ -33,4 +33,4 @@ Aivora 是一款基于 Kotlin 与 Jetpack Compose 的本地 Android AI 服务配
 
 Aivora 采用 **AGPL-3.0-only**，详见 [LICENSE](LICENSE)。
 
-当前版本：0.0.3。AKCP：1.0。加密方案：1。三者独立演进。
+当前版本：0.0.4。AKCP：1.0。加密方案：1。三者独立演进。

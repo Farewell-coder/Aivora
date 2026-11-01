@@ -33,4 +33,4 @@ The [AKCP directory](AKCP/) contains the specification, [Chinese adaptation guid
 
 Aivora is distributed under **AGPL-3.0-only**. See [LICENSE](LICENSE).
 
-Version: 0.0.3. AKCP: 1.0. Crypto suite: 1. These versions evolve independently.
+Version: 0.0.4. AKCP: 1.0. Crypto suite: 1. These versions evolve independently.
