@@ -1,10 +1,20 @@
+<div align="center">
+
 # Aivora
 
-[简体中文](README.md) | **English**
+**Local-first Android AI configuration manager**
 
-[![Release](https://img.shields.io/github/v/release/Farewell-coder/Aivora?label=release)](https://github.com/Farewell-coder/Aivora/releases)
-[![License](https://img.shields.io/github/license/Farewell-coder/Aivora)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84)](https://github.com/Farewell-coder/Aivora/releases)
+<br>
+
+<a href="https://github.com/Farewell-coder/Aivora/releases/latest"><img src="https://img.shields.io/github/v/release/Farewell-coder/Aivora?label=release" alt="Release"></a>
+&nbsp;
+<a href="LICENSE"><img src="https://img.shields.io/github/license/Farewell-coder/Aivora" alt="License"></a>
+&nbsp;
+<a href="README.md"><img src="https://img.shields.io/badge/language-%E4%B8%AD%E6%96%87-lightgrey?style=flat" alt="中文"></a>
+
+</div>
+
+---
 
 Aivora is a **local-first** AI service configuration manager for Android. It keeps your endpoints, API keys, model lists and notes on one device: encrypted at rest, easy to search, testable on demand, and transferable to other apps through an encrypted file.
 

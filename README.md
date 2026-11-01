@@ -1,10 +1,20 @@
+<div align="center">
+
 # Aivora
 
-**简体中文** | [English](README.en.md)
+**本地优先的 Android AI 配置管理器**
 
-[![Release](https://img.shields.io/github/v/release/Farewell-coder/Aivora?label=release)](https://github.com/Farewell-coder/Aivora/releases)
-[![License](https://img.shields.io/github/license/Farewell-coder/Aivora)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84)](https://github.com/Farewell-coder/Aivora/releases)
+<br>
+
+<a href="https://github.com/Farewell-coder/Aivora/releases/latest"><img src="https://img.shields.io/github/v/release/Farewell-coder/Aivora?label=release" alt="Release"></a>
+&nbsp;
+<a href="LICENSE"><img src="https://img.shields.io/github/license/Farewell-coder/Aivora" alt="License"></a>
+&nbsp;
+<a href="README.en.md"><img src="https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-English-lightgrey?style=flat" alt="English"></a>
+
+</div>
+
+---
 
 Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以把常用的 AI 服务（Endpoint、API Key、模型列表、备注）集中保存到一台设备上，加密存储、随时检索、按需检测可用性，并通过加密文件与其它软件交换配置。
 
