@@ -1,3 +1,0 @@
-# Compatibility and third-party integration
-
-Compatible software accepts only `.aivora` and independently implements the public AKCP format. It need not use Kotlin, Aivora's UI, Room, class names, an official SDK or an online service. Core/optional/extension/unknown fields have different handling rules; see SPECIFICATION.md. Preserve unknown values when your model permits and explicitly disclose loss otherwise. Never silently overwrite existing configurations: offer skip, duplicate or replace before writing. Level 1 import is sufficient for basic compatibility; Level 2 adds export and full preservation; Level 3 adds optional extensions and embedded recognition.

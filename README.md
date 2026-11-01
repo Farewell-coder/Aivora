@@ -54,7 +54,7 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 
 - **本地优先**：所有数据留在设备内，功能不依赖任何服务器可用性。
 - **不假装安全**：协议、算法、源码全部公开，安全性来自加密本身，不靠隐藏实现或代码混淆。
-- **兼容优先**：新格式不淘汰旧格式，已有文件与凭证长期有效。
+- **格式统一**：一个协议、一种文件、一套凭证，不收口于实施细节的碎片化。
 - **开放交换**：配置应当能在软件之间流转，而不是被锁在某个应用里。
 
 ## 功能展示
@@ -112,13 +112,12 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 
 > **状态：AEX 1.0 已冻结，自 0.0.5 起在 Aivora 中实现。**
 > 配置卡片与批量选择均生成 `.akcp` 文件，经 Android 系统分享面板交给接收方。
-> 旧版 AKCP 1.0 / `.aivora` 的导入与导出能力全部保留。
 
 ### 设计目的
 
 让“把一个 AI 服务配置从 A 软件搬到 B 软件”变成一件有标准可循的事。第三方软件不需要适配 Aivora 的私有格式，也不依赖 Aivora 的服务器，只要按公开规范实现解密即可接收。
 
-AEX 是**完整、独立的配置交换协议**，不是旧协议的插件或可选子模块。旧版格式仅作为历史兼容格式保留，Aivora 不会再发展第二套平行的交换协议。
+AEX 是 Aivora 的**完整、独立、唯一**的配置交换协议。不存在平行的第二套交换格式，也不再规划。
 
 ### `.akcp` 文件
 
@@ -173,22 +172,11 @@ AEX 是**完整、独立的配置交换协议**，不是旧协议的插件或可
 - **测试与验证**：[protocol/AEX-TEST-VECTORS.md](protocol/AEX-TEST-VECTORS.md)
 - **官方测试向量**：[protocol/test-vectors/](protocol/test-vectors/)
 - **协议更新记录**：[protocol/AEX-CHANGELOG.md](protocol/AEX-CHANGELOG.md)
-- **旧格式兼容**：[protocol/compatibility/legacy-format.md](protocol/compatibility/legacy-format.md)
 - **示例**：[单配置](protocol/examples/single-profile.md) · [多配置](protocol/examples/multiple-profiles.md) · [加密包结构](protocol/examples/encrypted-package.md)
-
-### 旧版协议（已实现，继续支持）
-
-- **AKCP 1.0 规范**：[AKCP/SPECIFICATION.md](AKCP/SPECIFICATION.md)
-- **中文适配指南**：[AKCP/ADAPTATION.zh-CN.md](AKCP/ADAPTATION.zh-CN.md)
-- **容器布局**：[AKCP/format/container.md](AKCP/format/container.md)
-- **加密定义**：[AKCP/cryptography/encryption.md](AKCP/cryptography/encryption.md)
-- **安全与错误码**：[AKCP/SECURITY.md](AKCP/SECURITY.md)
-- **Python 参考实现**：[AKCP/implementations/python/aivora_akcp.py](AKCP/implementations/python/aivora_akcp.py)
-- **互操作测试向量**：[AKCP/test-vectors/](AKCP/test-vectors/)
 
 ## 生态适配
 
-AEX 1.0 尚未在 Aivora 发布版本中实现，因此**目前没有任何第三方软件被列为已支持**。
+AEX 1.0 已随 Aivora 发布版本实现，可以开始联调。**目前尚无第三方软件完成适配**，列表为空。
 
 适配列表与登记格式见 [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md)。列表中的项目会明确标注适配状态：
 
@@ -256,10 +244,10 @@ cd Aivora
 
 ### 0.0.1
 
-- 首个版本：本地加密配置管理、密钥检测、AKCP 1.0 导入导出。
+- 首个版本：本地加密配置管理、密钥检测、配置导入导出。
 
 ## 许可证
 
 Aivora 采用 **AGPL-3.0-only**，详见 [LICENSE](LICENSE)。
 
-版本说明：应用版本、协议版本与加密方案版本**独立演进**。当前为应用 0.0.5 · AKCP 1.0 · 加密方案 1；AEX 1.0 处于草案阶段。
+版本说明：应用版本与协议版本**独立演进**。当前为应用 0.0.5 · AEX 1.0（已冻结）。

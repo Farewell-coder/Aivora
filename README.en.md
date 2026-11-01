@@ -112,13 +112,12 @@ Release builds are signed with a fixed certificate, so they upgrade in place. A 
 
 > **Status: AEX 1.0 is frozen and implemented since 0.0.5.**
 > Configuration cards and multi-select both generate `.akcp` files delivered through the Android share sheet.
-> The legacy AKCP 1.0 / `.aivora` import and export paths remain fully supported.
 
 ### Purpose
 
 Make "move a configuration from app A to app B" follow a published standard. Third-party software does not need a private Aivora format, an Aivora SDK, an account or an Aivora server — only a compliant implementation of the public spec.
 
-AEX is a **complete, standalone** exchange protocol, not a plugin or optional sub-module of the legacy format. The legacy format is kept only for historical compatibility; Aivora will not develop a second parallel exchange protocol.
+AEX is the **complete, standalone and only** exchange protocol of Aivora. There is no second parallel format, and none is planned.
 
 ### The `.akcp` file
 
@@ -173,18 +172,7 @@ No SDK, account, server or source code needed.
 - **Test vectors**: [protocol/AEX-TEST-VECTORS.md](protocol/AEX-TEST-VECTORS.md)
 - **Official test vectors**: [protocol/test-vectors/](protocol/test-vectors/)
 - **Protocol changelog**: [protocol/AEX-CHANGELOG.md](protocol/AEX-CHANGELOG.md)
-- **Legacy compatibility**: [protocol/compatibility/legacy-format.md](protocol/compatibility/legacy-format.md)
 - **Examples**: [single](protocol/examples/single-profile.md) · [multiple](protocol/examples/multiple-profiles.md) · [encrypted package](protocol/examples/encrypted-package.md)
-
-### Legacy protocol (implemented, still supported)
-
-- **AKCP 1.0 specification**: [AKCP/SPECIFICATION.md](AKCP/SPECIFICATION.md)
-- **Chinese adaptation guide**: [AKCP/ADAPTATION.zh-CN.md](AKCP/ADAPTATION.zh-CN.md)
-- **Container layout**: [AKCP/format/container.md](AKCP/format/container.md)
-- **Cryptography**: [AKCP/cryptography/encryption.md](AKCP/cryptography/encryption.md)
-- **Security and error codes**: [AKCP/SECURITY.md](AKCP/SECURITY.md)
-- **Python reference implementation**: [AKCP/implementations/python/aivora_akcp.py](AKCP/implementations/python/aivora_akcp.py)
-- **Interoperability vectors**: [AKCP/test-vectors/](AKCP/test-vectors/)
 
 ## Ecosystem
 
@@ -256,10 +244,10 @@ Requires JDK 17 and Android SDK 35. Make sure unit tests pass and avoid unrelate
 
 ### 0.0.1
 
-- First release: encrypted local configuration management, key diagnostics, AKCP 1.0 import and export.
+- First release: encrypted local configuration management, key diagnostics, configuration import and export.
 
 ## License
 
 Aivora is distributed under **AGPL-3.0-only**. See [LICENSE](LICENSE).
 
-Versioning note: application, protocol and crypto-suite versions **evolve independently**. Currently app 0.0.5 · AKCP 1.0 · crypto suite 1; AEX 1.0 is a draft.
+Versioning note: application and protocol versions **evolve independently**. Currently app 0.0.5 · AEX 1.0 (frozen).

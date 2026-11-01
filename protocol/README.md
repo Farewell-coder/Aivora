@@ -9,7 +9,7 @@
 - 加密：AES-256-GCM + PBKDF2-HMAC-SHA256
 
 > **实现状态说明**
-> 自 Aivora 0.0.5 起，AEX 1.0 已在应用中实现：配置卡片与批量选择均生成 `.akcp` 文件，并通过 Android 系统分享面板交给接收方。旧版 AKCP 1.0 / `.aivora` 的导入与导出能力全部保留。Aivora 自身不提供 `.akcp` 接收入口。
+> 自 Aivora 0.0.5 起，AEX 1.0 已在应用中实现：配置卡片与批量选择均生成 `.akcp` 文件，并通过 Android 系统分享面板交给接收方。Aivora 自身不提供 `.akcp` 接收入口。
 
 ## 文档索引
 
@@ -23,10 +23,8 @@
 | [AEX-TEST-VECTORS](AEX-TEST-VECTORS.md) | 测试方法、验收清单与负向用例 |
 | [test-vectors/](test-vectors/) | 官方测试向量（Python 独立实现生成，附 SHA-256 与期望明文） |
 | [示例](examples/) | 单配置、多配置、加密包三个示例 |
-| [兼容性](compatibility/legacy-format.md) | 旧版 AKCP 1.0 / `.aivora` 兼容规则 |
 | [生态适配](ECOSYSTEM.md) | 已适配软件列表与提交方式 |
 
-旧版协议文档保留在 [AKCP 目录](../AKCP/)，仅作历史兼容格式参考。
 
 ## 一句话概括
 
@@ -34,4 +32,4 @@ Aivora 生成一个加密的 `.akcp` 文件并通过 Android 系统分享面板�
 
 ## 参与协议讨论
 
-对草案有异议、发现歧义或需要补充字段，请开 Issue 并标注 `protocol` 标签。协议在冻结前不保证向后兼容。
+对规范有异议、发现歧义或需要补充字段，请开 Issue 并标注 `protocol` 标签。1.0 已冻结，向后兼容由 [版本规则](AEX-SPECIFICATION.md) 约束。
