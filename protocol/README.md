@@ -20,7 +20,8 @@
 | [AEX-SCHEMA.json](AEX-SCHEMA.json) | 配置数据的 JSON Schema 定义 |
 | [AEX-CHANGELOG](AEX-CHANGELOG.md) | 协议版本更新记录 |
 | [AEX-ADAPTER-GUIDE](AEX-ADAPTER-GUIDE.md) | 第三方软件接入指南（含 Android 接收建议） |
-| [AEX-TEST-VECTORS](AEX-TEST-VECTORS.md) | 协议测试数据与跨语言互操作验证方法 |
+| [AEX-TEST-VECTORS](AEX-TEST-VECTORS.md) | 测试方法、验收清单与负向用例 |
+| [test-vectors/](test-vectors/) | 官方测试向量（Python 独立实现生成，附 SHA-256 与期望明文） |
 | [示例](examples/) | 单配置、多配置、加密包三个示例 |
 | [兼容性](compatibility/legacy-format.md) | 旧版 AKCP 1.0 / `.aivora` 兼容规则 |
 | [生态适配](ECOSYSTEM.md) | 已适配软件列表与提交方式 |

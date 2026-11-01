@@ -63,6 +63,14 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 
 > 检测会发送一次极小的真实请求（`max_tokens = 1`），可能消耗少量额度。
 
+### 导出与分享
+
+配置卡片右下角的导出按钮会打开一个窗口，里面提供两个并列的动作：「导出」把 `.akcp` 保存到你自选的位置，「分享」直接交给系统分享面板发给其他软件。两者生成的文件字节完全相同。
+
+窗口里同时显示这枚文件专属的 52 字符凭证。**文件本身不含凭证**，所以无论导出还是分享，接收方都必须另外拿到这串凭证才能解密。
+
+典型使用场景：把它发到自己的另一台设备或交给某个客户端，凭证另行口述或用密码管理器同步，文件即使被中途看到也读不出内容。
+
 ### 设置与备份
 
 设置页集中提供外观选择（浅色 / 深色 / 跟随系统）、应用锁与全量加密备份。备份文件使用独立凭证保护，跨设备恢复时用新设备的密钥重新加密，导入前二次确认防止误覆盖。
@@ -117,7 +125,7 @@ AEX 是**完整、独立的配置交换协议**，不是旧协议的插件或可
 
 ### 配置分享能力
 
-规划中的导出流程：
+导出流程：
 
 ```text
 配置页 → 导出 → 生成 .akcp（独立凭证加密）→ 系统分享面板 → 选择目标软件
@@ -153,6 +161,7 @@ AEX 是**完整、独立的配置交换协议**，不是旧协议的插件或可
 - **数据结构 Schema**：[protocol/AEX-SCHEMA.json](protocol/AEX-SCHEMA.json)
 - **适配指南**：[protocol/AEX-ADAPTER-GUIDE.md](protocol/AEX-ADAPTER-GUIDE.md)
 - **测试与验证**：[protocol/AEX-TEST-VECTORS.md](protocol/AEX-TEST-VECTORS.md)
+- **官方测试向量**：[protocol/test-vectors/](protocol/test-vectors/)
 - **协议更新记录**：[protocol/AEX-CHANGELOG.md](protocol/AEX-CHANGELOG.md)
 - **旧格式兼容**：[protocol/compatibility/legacy-format.md](protocol/compatibility/legacy-format.md)
 - **示例**：[单配置](protocol/examples/single-profile.md) · [多配置](protocol/examples/multiple-profiles.md) · [加密包结构](protocol/examples/encrypted-package.md)

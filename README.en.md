@@ -63,6 +63,14 @@ Typical use: before trusting a new gateway key, run it once and see which models
 
 > Diagnostics send one minimal real request (`max_tokens = 1`) and may consume a small amount of quota.
 
+### Export and share
+
+The export action on each configuration card opens a dialog with two side-by-side choices: **Export** saves the `.akcp` wherever you pick, **Share** hands it to the system share sheet. Both produce byte-identical files.
+
+The dialog also shows the 52-character credential unique to that file. **The file itself carries no credential**, so either way the recipient needs that credential separately before it can be decrypted.
+
+Typical use: send the file to another device of yours or to a client, and pass the credential through a different channel. Anyone intercepting the file alone still cannot read it.
+
 ### Settings and backup
 
 Settings hosts the appearance choice (light / dark / system), the app lock and encrypted full backups. Backup files are protected by an independent credential; a cross-device restore re-encrypts secrets with the new device key and asks for confirmation before overwriting.
@@ -153,6 +161,7 @@ No SDK, account, server or source code needed.
 - **Payload schema**: [protocol/AEX-SCHEMA.json](protocol/AEX-SCHEMA.json)
 - **Adapter guide**: [protocol/AEX-ADAPTER-GUIDE.md](protocol/AEX-ADAPTER-GUIDE.md)
 - **Test vectors**: [protocol/AEX-TEST-VECTORS.md](protocol/AEX-TEST-VECTORS.md)
+- **Official test vectors**: [protocol/test-vectors/](protocol/test-vectors/)
 - **Protocol changelog**: [protocol/AEX-CHANGELOG.md](protocol/AEX-CHANGELOG.md)
 - **Legacy compatibility**: [protocol/compatibility/legacy-format.md](protocol/compatibility/legacy-format.md)
 - **Examples**: [single](protocol/examples/single-profile.md) · [multiple](protocol/examples/multiple-profiles.md) · [encrypted package](protocol/examples/encrypted-package.md)

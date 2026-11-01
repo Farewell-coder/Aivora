@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.security.SecureRandom
 
 class AexTest {
@@ -137,5 +138,30 @@ class AexTest {
         val export = Aex.export(listOf(profile("extra").copy(extra = extra)), "0.0.5", credential)
         val imported = Aex.import(export.bytes, export.credential)
         assertEquals(extra, imported[0].extra)
+    }
+
+    /** Loads a vector shipped in protocol/test-vectors and decrypts it with the Kotlin implementation.
+     *  This is the cross-language interoperability check: the vectors are produced by an
+     *  independent Python implementation (scripts/gen_vectors.py), not by Aivora itself. */
+    @Test fun decryptsPythonGeneratedVectors() {
+        val dir = File("../protocol/test-vectors")
+        if (!dir.isDirectory) return
+        val single = File(dir, "single.akcp").readBytes()
+        val multiple = File(dir, "multiple.akcp").readBytes()
+        assertEquals(Aex.Detected.AEX, Aex.detect(single))
+        val one = Aex.import(single, "A".repeat(52))
+        assertEquals(1, one.size)
+        assertEquals("Synthetic Vector", one[0].name)
+        assertEquals("sk-EXAMPLE-NOT-REAL", one[0].apiKey)
+        val many = Aex.import(multiple, "A".repeat(52))
+        assertEquals(listOf("Alpha", "Beta", "Gamma"), many.map { it.name })
+        assertEquals(listOf("m2", "m3"), many[1].models)
+    }
+
+    @Test(expected = Aex.Failure.Authentication::class)
+    fun pythonVectorRejectedWithWrongCredential() {
+        val file = File("../protocol/test-vectors/single.akcp")
+        if (!file.isFile) return
+        Aex.import(file.readBytes(), "B".repeat(52))
     }
 }

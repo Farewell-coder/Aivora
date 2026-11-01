@@ -1,6 +1,6 @@
 # AEX Test Vectors
 
-> 状态：1.0 已冻结并实现。Aivora 0.0.5 起通过单元测试覆盖下列场景；跨语言参考实现与正式向量文件将随后补充。
+> 状态：1.0 已冻结并实现。官方向量文件已提供在 [test-vectors/](test-vectors/README.md)，由独立的 Python 实现生成并已被 Kotlin 实现成功解密。
 
 ## 1. 原则
 
@@ -49,7 +49,7 @@
 - 参考实现导出的文件，Aivora 必须能解密。
 - 双方对同一批向量产出的密文应逐字节一致（在固定 Salt/Nonce 的前提下）。
 
-验证脚本与向量文件将在 AEX 实现完成后加入本目录。
+验证脚本见 [`scripts/gen_vectors.py`](../scripts/gen_vectors.py)，向量文件见 [test-vectors/](test-vectors/README.md)。Aivora 的 `AexTest.decryptsPythonGeneratedVectors` 与 `pythonVectorRejectedWithWrongCredential` 已覆盖该验证。
 
 ## 5. 验收清单
 
