@@ -1,6 +1,6 @@
-# AEX Test Vectors (Draft)
+# AEX Test Vectors
 
-> 状态：Draft — 规划中。AEX 参考实现尚未落地，本文件目前只定义**测试向量的生成规则与验证清单**；正式向量文件将在 Aivora 实现 AEX 后补充到 `protocol/test-vectors/`。
+> 状态：1.0 已冻结并实现。Aivora 0.0.5 起通过单元测试覆盖下列场景；跨语言参考实现与正式向量文件将随后补充。
 
 ## 1. 原则
 

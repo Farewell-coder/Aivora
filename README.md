@@ -92,9 +92,9 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 
 ## AEX 配置交换协议
 
-> **状态：Draft（规划中，尚未冻结，尚未在 Aivora 发布版本中实现）**
-> 当前 0.0.5 版本的配置交换仍使用旧版 AKCP 1.0 与 `.aivora` 文件。
-> AEX 的文件生成、系统分享面板与第三方接收链路将在后续版本实现，本节的协议内容为设计草案。
+> **状态：AEX 1.0 已冻结，自 0.0.5 起在 Aivora 中实现。**
+> 配置卡片与批量选择均生成 `.akcp` 文件，经 Android 系统分享面板交给接收方。
+> 旧版 AKCP 1.0 / `.aivora` 的导入与导出能力全部保留。
 
 ### 设计目的
 
@@ -212,6 +212,7 @@ cd Aivora
 ### 0.0.5
 
 - **修复**：使用 `http://` 的第三方 Endpoint 无法拉取模型的问题。此前请求会被 Android 明文流量策略拦截，错误提示为 `CLEARTEXT communication not permitted by network security policy`，请求根本没有到达服务端。现通过网络安全配置文件允许明文 HTTP，同时保持系统证书校验不变。
+- **AEX 协议**：实现 AEX 1.0（`.akcp`，AES-256-GCM + PBKDF2-HMAC-SHA256 600000 次迭代，头部作为 AAD），导出后经 FileProvider 调用系统分享面板，支持单配置、多选与全量三种范围。
 - **文档**：新增 AEX 协议文档目录 `protocol/`，重构主 README。
 
 ### 0.0.4

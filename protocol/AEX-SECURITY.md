@@ -1,6 +1,6 @@
-# AEX Security (Draft)
+# AEX Security
 
-> 状态：Draft — 规划中，尚未冻结。
+> 状态：1.0 已冻结，Aivora 0.0.5 起实现。
 
 ## 1. 安全模型
 

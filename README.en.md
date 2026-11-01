@@ -92,9 +92,9 @@ Release builds are signed with a fixed certificate, so they upgrade in place. A 
 
 ## AEX exchange protocol
 
-> **Status: Draft — under design, not frozen, not yet implemented in any Aivora release.**
-> Version 0.0.5 still exchanges configurations using the legacy AKCP 1.0 format and `.aivora` files.
-> `.akcp` generation, the system share sheet and third-party intake will ship in a later version; this section describes the design.
+> **Status: AEX 1.0 is frozen and implemented since 0.0.5.**
+> Configuration cards and multi-select both generate `.akcp` files delivered through the Android share sheet.
+> The legacy AKCP 1.0 / `.aivora` import and export paths remain fully supported.
 
 ### Purpose
 
@@ -212,6 +212,7 @@ Requires JDK 17 and Android SDK 35. Make sure unit tests pass and avoid unrelate
 ### 0.0.5
 
 - **Fixed**: plain `http://` third-party endpoints could not fetch models. The request was blocked by Android's cleartext traffic policy (`CLEARTEXT communication not permitted by network security policy`) and never reached the server. A network security config now permits cleartext HTTP while keeping system certificate validation unchanged.
+- **AEX protocol**: implemented AEX 1.0 (`.akcp`, AES-256-GCM with PBKDF2-HMAC-SHA256 at 600,000 iterations, header as AAD). Exports go through a FileProvider into the system share sheet and support single, multi-selected and full-set scopes.
 - **Docs**: added the `protocol/` directory and rewrote the main README.
 
 ### 0.0.4

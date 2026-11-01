@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 只暴露导出用的临时文件目录，应用私有数据目录不外露。 -->
+    <cache-path name="aex-share" path="aex-share/" />
+</paths>

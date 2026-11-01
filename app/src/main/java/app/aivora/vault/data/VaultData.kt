@@ -96,6 +96,18 @@ class VaultRepository(context: Context) {
         if (config.encryptedKey.isEmpty()) "" else crypto.decrypt(config.encryptedKey),
         config.endpoint, emptyList(), "", config.notes, config.enabled,
         kotlinx.serialization.json.Json.parseToJsonElement(config.extensionsJson).jsonObject)
+    /** Maps a database row to an AEX profile. The API key is decrypted for the encrypted payload only. */
+    fun toAex(config: ServiceConfig) = app.aivora.vault.protocol.Aex.Profile(
+        id = "aivora-" + config.id,
+        name = config.name,
+        provider = config.provider,
+        baseUrl = config.endpoint,
+        apiKey = if (config.encryptedKey.isEmpty()) "" else runCatching { crypto.decrypt(config.encryptedKey) }.getOrDefault(""),
+        models = config.models.split(",").map(String::trim).filter(String::isNotEmpty),
+        defaultModel = config.defaultModel,
+        description = config.notes,
+        extra = runCatching { kotlinx.serialization.json.Json.parseToJsonElement(config.extensionsJson).jsonObject }.getOrElse { kotlinx.serialization.json.JsonObject(emptyMap()) }
+    )
     fun fromAkcp(config: Akcp.Config) = ServiceConfig(name = config.config_name, provider = config.provider,
         encryptedKey = crypto.encrypt(config.api_key), endpoint = config.endpoint, models = config.models.joinToString(","),
         defaultModel = config.default_model, notes = config.notes, enabled = config.enabled, extensionsJson = config.extensions.toString())

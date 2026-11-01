@@ -34,6 +34,8 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import app.aivora.vault.data.*
+import app.aivora.vault.protocol.Aex
+import app.aivora.vault.protocol.AexShare
 import app.aivora.vault.protocol.Akcp
 import app.aivora.vault.protocol.Backup
 import kotlinx.serialization.json.Json
@@ -96,7 +98,7 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
                 Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
                     Spacer(Modifier.height(20.dp)); PageHeader(page) { page = if (page == Page.Protocol) Page.About else if (page == Page.About) Page.Settings else Page.Configs }
                     when (page) {
-                        Page.Configs -> ConfigPage(configs, repo, { editing = it; showEditor = true }, { editing = null; showEditor = true }, { page = it }) { message = it }
+                        Page.Configs -> ConfigPage(configs, repo, packageVersion(LocalContext.current), { editing = it; showEditor = true }, { editing = null; showEditor = true }, { page = it }) { message = it }
                         Page.Diagnostics -> DiagnosticsPage(configs, repo) { message = it }
                         Page.Settings -> SettingsPage(repo, prefs, themeMode, { themeMode = it; prefs.edit().putString("theme", it.name).apply() }, locked, ::changeLock, { page = Page.About }) { message = it }
                         Page.About -> AboutPage { page = Page.Protocol }
@@ -145,31 +147,103 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 @Composable fun ConfigSummary(c: ServiceConfig) {
     Row(verticalAlignment = Alignment.CenterVertically) { Surface(Modifier.size(42.dp), color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(13.dp)) { Box(contentAlignment = Alignment.Center) { Text(c.name.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer) } }; Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) { Text(c.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); if (c.notes.isNotBlank()) Text(c.notes, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis) } }
 }
-@Composable fun ConfigPage(configs: List<ServiceConfig>, repo: VaultRepository, edit: (ServiceConfig) -> Unit, add: () -> Unit, navigate: (Page) -> Unit, toast: (String) -> Unit) {
+@Composable fun ConfigPage(configs: List<ServiceConfig>, repo: VaultRepository, appVersion: String, edit: (ServiceConfig) -> Unit, add: () -> Unit, navigate: (Page) -> Unit, toast: (String) -> Unit) {
     var search by remember { mutableStateOf("") }; var deleting by remember { mutableStateOf<ServiceConfig?>(null) }; var exporting by remember { mutableStateOf<ServiceConfig?>(null) }
+    var selecting by remember { mutableStateOf(false) }; var picked by remember { mutableStateOf<Set<Long>>(emptySet()) }; var sharing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope(); val context = LocalContext.current; val clipboard = LocalClipboardManager.current
     var importFile by remember { mutableStateOf<Pair<Uri, String>?>(null) }; var importCredential by remember { mutableStateOf("") }; var checkingImport by remember { mutableStateOf(false) }
     val openLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let { uri -> val name = context.contentResolver.query(uri, null, null, null, null)?.use { cur -> if (cur.moveToFirst()) cur.getString(cur.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)) else "" } ?: ""; importFile = uri to name; importCredential = "" } }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { LabelButton(add, Lucide.Plus, "新建配置", Modifier.weight(1f)); LabelButton({ openLauncher.launch(arrayOf("application/octet-stream", "*/*")) }, Lucide.Import, "导入", Modifier.weight(1f)) }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        LabelButton(add, Lucide.Plus, "新建配置", Modifier.weight(1f))
+        LabelButton({ openLauncher.launch(arrayOf("application/octet-stream", "*/*")) }, Lucide.Import, "导入", Modifier.weight(1f))
+        LabelButton({ selecting = !selecting; if (!selecting) picked = emptySet() }, Lucide.Check, if (selecting) "取消" else "选择", Modifier.weight(1f))
+    }
     Spacer(Modifier.height(12.dp)); OutlinedTextField(search, { search = it }, Modifier.fillMaxWidth(), leadingIcon = { Icon(Lucide.Search, null) }, placeholder = { Text("搜索名称、服务商或 Endpoint") }, singleLine = true, shape = CircleShape); Spacer(Modifier.height(14.dp))
     val filtered = configs.filter { "${it.name} ${it.provider} ${it.endpoint} ${it.notes}".contains(search, true) }
-    if (filtered.isEmpty()) AppCard { Empty("还没有匹配的服务配置") } else filtered.forEach { c -> AppCard { ConfigSummary(c); Spacer(Modifier.height(6.dp)); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+    if (filtered.isEmpty()) AppCard { Empty("还没有匹配的服务配置") } else filtered.forEach { c -> AppCard {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (selecting) {
+                Checkbox(checked = c.id in picked, onCheckedChange = { on -> picked = if (on) picked + c.id else picked - c.id })
+                Spacer(Modifier.width(4.dp))
+            }
+            Box(Modifier.weight(1f).clickable(enabled = selecting) { picked = if (c.id in picked) picked - c.id else picked + c.id }) { ConfigSummary(c) }
+        }
+        Spacer(Modifier.height(6.dp)); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
         IconButton({ edit(c) }, Modifier.size(40.dp)) { Icon(Lucide.Edit, "编辑", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
         IconButton({ exporting = c }, Modifier.size(40.dp)) { Icon(Lucide.Export, "导出", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
         IconButton({ try { if (c.endpoint.isBlank() || c.encryptedKey.isBlank()) error("Endpoint 或 API Key 未填写"); clipboard.setText(AnnotatedString(c.endpoint + "\n" + repo.crypto.decrypt(c.encryptedKey).trim())); Toast.makeText(context, "Endpoint 和 API Key 已复制", Toast.LENGTH_SHORT).show() } catch (e: Exception) { Toast.makeText(context, e.message ?: "配置不完整", Toast.LENGTH_SHORT).show() } }, Modifier.size(40.dp)) { Icon(Lucide.Copy, "复制 Endpoint 和 API Key", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
         IconButton({ deleting = c }, Modifier.size(40.dp)) { Icon(Lucide.Trash, "删除", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error) }
-    } } }
+            } } }
+    if (selecting) {
+        AppCard {
+            Text("已选 ${picked.size} / ${configs.size} 个配置", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LabelButton({
+                    scope.launch {
+                        if (sharing) return@launch
+                        val targets = configs.filter { it.id in picked }
+                        if (targets.isEmpty()) { toast("请先勾选要导出的配置"); return@launch }
+                        sharing = true
+                        try { shareProfiles(context, repo, appVersion, targets) } catch (e: Exception) { toast(e.message ?: "导出失败") } finally { sharing = false }
+                    }
+                }, Lucide.Export, if (sharing) "生成中" else "导出所选", Modifier.weight(1f), enabled = !sharing && picked.isNotEmpty())
+                LabelButton({
+                    scope.launch {
+                        if (sharing) return@launch
+                        if (configs.isEmpty()) { toast("没有可导出的配置"); return@launch }
+                        sharing = true
+                        try { shareProfiles(context, repo, appVersion, configs) } catch (e: Exception) { toast(e.message ?: "导出失败") } finally { sharing = false }
+                    }
+                }, Lucide.Export, "导出全部", Modifier.weight(1f), enabled = !sharing && configs.isNotEmpty())
+            }
+        }
+    }
     deleting?.let { c -> AlertDialog({ deleting = null }, title = { Text("删除服务配置") }, text = { Text("确定删除「${c.name}」吗？此操作无法撤销。") }, confirmButton = { TextButton({ scope.launch { repo.dao.delete(c); deleting = null; toast("配置已删除") } }) { Text("确认删除") } }, dismissButton = { TextButton({ deleting = null }) { Text("取消") } }) }
-    exporting?.let { c -> ExportDialog(c, repo, { exporting = null }, toast) }
+    exporting?.let { c -> ExportDialog(c, repo, appVersion, { exporting = null }, toast) }
     importFile?.let { (uri, name) -> AlertDialog({ if (!checkingImport) importFile = null }, title = { Text("输入导入凭证") }, text = { Column { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis); Spacer(Modifier.height(10.dp)); OutlinedTextField(importCredential, { importCredential = it }, Modifier.fillMaxWidth(), label = { Text("导出凭证") }, singleLine = true, visualTransformation = PasswordVisualTransformation()) } }, confirmButton = { Button({ if (importCredential.isBlank()) toast("请输入导出凭证") else scope.launch { checkingImport = true; try { val data = withContext(Dispatchers.IO) { Akcp.requireFilename(name); val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("文件读取失败"); Akcp.import(bytes, importCredential) }; data.forEach { item -> configs.firstOrNull { it.name == item.config_name && it.endpoint == item.endpoint }?.let { repo.dao.delete(it) }; repo.dao.save(repo.fromAkcp(item)) }; importFile = null; toast("已导入 ${data.size} 条配置") } catch (e: Exception) { toast(e.message ?: "凭证错误或文件无效") } finally { checkingImport = false } } }, enabled = !checkingImport) { Text(if (checkingImport) "验证中…" else "导入") } }, dismissButton = { TextButton({ importFile = null }, enabled = !checkingImport) { Text("取消") } }) }
 }
-@Composable fun ExportDialog(config: ServiceConfig, repo: VaultRepository, close: () -> Unit, toast: (String) -> Unit) {
+@Composable fun ExportDialog(config: ServiceConfig, repo: VaultRepository, appVersion: String, close: () -> Unit, toast: (String) -> Unit) {
     val context = LocalContext.current; val clipboard = LocalClipboardManager.current; val scope = rememberCoroutineScope()
-    var working by remember { mutableStateOf(false) }; var pending by remember { mutableStateOf<Pair<ByteArray, String>?>(null) }
-    val result = remember(config.endpoint, config.encryptedKey) { if (config.endpoint.isBlank() || config.encryptedKey.isBlank()) null else runCatching { Akcp.export(listOf(repo.toAkcp(config))) }.getOrNull() }
-    val filename = remember(config.name) { "Aivora-" + config.name.replace(Regex("[^\\p{L}\\p{N}_-]"), "_") + ".aivora" }
-    val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri -> if (uri != null) pending?.let { (bytes, credential) -> scope.launch(Dispatchers.IO) { try { context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("无法写入文件"); repo.dao.recordExport(ExportRecord(fileName = filename, encryptedCredential = repo.crypto.encrypt(credential), configCount = 1)); withContext(Dispatchers.Main) { pending = null; close(); toast("导出成功") } } catch (e: Exception) { withContext(Dispatchers.Main) { toast(e.message ?: "导出失败") } } } } }
-    AlertDialog(close, title = { Text("导出「${config.name}」") }, text = { Column { Text("导入此文件时需要以下凭证，请妥善保存。", color = MaterialTheme.colorScheme.onSurfaceVariant); Surface(Modifier.fillMaxWidth().padding(vertical = 14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(14.dp)) { SelectionContainer { Text(result?.credential ?: "请先填写 Endpoint 和 API Key", Modifier.padding(14.dp), style = MaterialTheme.typography.bodySmall) } }; LabelButton({ val value = result?.credential; if (value.isNullOrBlank()) toast("请先填写 Endpoint 和 API Key") else { clipboard.setText(AnnotatedString(value)); toast("凭证已复制") } }, Lucide.Copy, "复制凭证") } }, confirmButton = { Button({ scope.launch { working = true; try { if (config.endpoint.isBlank() || config.encryptedKey.isBlank()) error("请先填写 Endpoint 和 API Key"); val exported = result ?: error("导出内容生成失败，请重新打开导出") ; pending = exported.bytes to exported.credential; saveLauncher.launch(filename) } catch (e: Exception) { toast(e.message ?: "导出失败") } finally { working = false } } }, enabled = !working) { if (working) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else { Icon(Lucide.Export, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("导出") } } }, dismissButton = { TextButton(close, enabled = !working) { Text("取消") } })
+    var working by remember { mutableStateOf(false) }
+    // 派生 600000 次 PBKDF2 需要几百毫秒，放在后台线程算，UI 先显示进度。
+    // key 包含配置的全部可见字段，配置被修改后必须换用新的凭证与文件。
+    var exported by remember { mutableStateOf<Aex.Export?>(null) }
+    var generating by remember { mutableStateOf(false) }
+    LaunchedEffect(config.id, config.name, config.provider, config.endpoint, config.encryptedKey, config.notes, config.models, config.defaultModel) {
+        exported = null
+        if (config.endpoint.isBlank() || config.encryptedKey.isBlank()) return@LaunchedEffect
+        generating = true
+        try { exported = withContext(Dispatchers.Default) { runCatching { Aex.export(listOf(repo.toAex(config)), appVersion) }.getOrNull() } }
+        finally { generating = false }
+    }
+    val displayCredential = exported?.credential
+    AlertDialog(close, title = { Text("导出「${config.name}」") }, text = {
+        Column {
+            Text("将通过系统分享面板发送一个 .akcp 文件。导入方需要下面的凭证。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Surface(Modifier.fillMaxWidth().padding(vertical = 14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(14.dp)) {
+                SelectionContainer { Text(displayCredential ?: if (generating) "正在生成凭证…" else "请先填写 Endpoint 和 API Key", Modifier.padding(14.dp), style = MaterialTheme.typography.bodySmall) }
+            }
+            Text("该文件包含完整 API Key，接收应用解密后可读取明文，请仅分享给可信应用。", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+            LabelButton({ val value = displayCredential; if (value.isNullOrBlank()) toast("请先填写 Endpoint 和 API Key") else { clipboard.setText(AnnotatedString(value)); toast("凭证已复制") } }, Lucide.Copy, "复制凭证")
+        }
+    }, confirmButton = {
+        Button({ scope.launch {
+            if (working) return@launch
+            working = true
+            try {
+                if (config.endpoint.isBlank() || config.encryptedKey.isBlank()) error("请先填写 Endpoint 和 API Key")
+                val data = exported ?: error("导出内容生成失败，请重新打开导出")
+                val fileName = config.name.replace(Regex("[^\\p{L}\\p{N}_-]"), "_").ifBlank { "Aivora" } + Aex.EXTENSION
+                val prepared = AexShare.prepare(context, data, fileName, "Aivora 配置：${config.name}").getOrElse { error(it.message ?: "无法生成临时文件") }
+                repo.dao.recordExport(ExportRecord(fileName = fileName, encryptedCredential = repo.crypto.encrypt(data.credential), configCount = data.profileCount))
+                context.startActivity(prepared.first)
+                close(); toast("已生成 .akcp 文件，请选择接收应用")
+            } catch (e: Exception) { toast(e.message ?: "导出失败") } finally { working = false }
+        } }, enabled = !working && !generating && exported != null) {
+            if (working || generating) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else { Icon(Lucide.Export, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("分享") }
+        }
+    }, dismissButton = { TextButton(close, enabled = !working) { Text("取消") } })
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun ConfigEditor(old: ServiceConfig?, repo: VaultRepository, close: () -> Unit, toast: (String) -> Unit) {
@@ -249,7 +323,7 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 }
 @Composable fun AboutPage(protocol: () -> Unit) {
     val uri = LocalUriHandler.current
-    AppCard { Text("Aivora", fontSize = 25.sp, fontWeight = FontWeight.Bold); Text("本地 AI 配置管理工具\n版本 0.0.5 · AKCP 1.0\nAGPL-3.0-only\n数据仅保存在当前设备，不依赖云端账户。") }
+    AppCard { Text("Aivora", fontSize = 25.sp, fontWeight = FontWeight.Bold); Text("本地 AI 配置管理工具\n版本 0.0.5 · AEX 1.0\nAGPL-3.0-only\n数据仅保存在当前设备，不依赖云端账户。") }
     AppCard { Text("开放生态", fontWeight = FontWeight.Bold); Spacer(Modifier.height(12.dp)); LabelButton(protocol, Lucide.File, "适配协议", Modifier.fillMaxWidth()); Spacer(Modifier.height(8.dp)); LabelButton({ uri.openUri("https://github.com/Farewell-coder/Aivora") }, Lucide.Github, "GitHub 项目", Modifier.fillMaxWidth()) }
     AppCard { Text("安全边界", fontWeight = FontWeight.Bold); Text("凭证用于加密导出文件。第三方成功解密后可接触明文 API Key；请仅向可信服务提交密钥。", fontSize = 12.sp) }
 }
@@ -259,3 +333,19 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
     AppCard { Text("导入与导出", fontWeight = FontWeight.Bold); Text("导出时将单个配置加密为 .aivora 文件；导入时选择文件并输入对应凭证。凭证错误、文件被修改或格式不支持时不会写入配置。\n\n全量备份使用独立的 .aivora-backup 格式，仅用于 Aivora 数据恢复，不与 AKCP 配置交换文件混用。") }
 }
 @Composable fun Empty(text: String) = Column(Modifier.fillMaxWidth().padding(vertical = 34.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(Lucide.Search, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f)); Spacer(Modifier.height(10.dp)); Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) }
+
+/** Reads versionName from the installed package; falls back to a neutral label. */
+fun packageVersion(context: android.content.Context): String = runCatching {
+    context.packageManager.getPackageInfo(context.packageName, 0).versionName
+}.getOrNull().orEmpty().ifBlank { "unknown" }
+
+/** Generates one .akcp for [targets] and opens the system share sheet. */
+suspend fun shareProfiles(context: android.content.Context, repo: VaultRepository, appVersion: String, targets: List<ServiceConfig>) {
+    val profiles = targets.map { repo.toAex(it) }
+    val exported = Aex.export(profiles, appVersion)
+    val fileName = if (targets.size == 1) AexShare.sanitize(targets.first().name) else "Aivora-" + targets.size + "-configs" + Aex.EXTENSION
+    val prepared = AexShare.prepare(context, exported, fileName, "Aivora 配置（${targets.size} 项）")
+        .getOrElse { throw IllegalStateException(it.message ?: "无法生成临时文件") }
+    repo.dao.recordExport(ExportRecord(fileName = fileName, encryptedCredential = repo.crypto.encrypt(exported.credential), configCount = exported.profileCount))
+    context.startActivity(prepared.first)
+}
