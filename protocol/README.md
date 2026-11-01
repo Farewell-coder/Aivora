@@ -3,7 +3,7 @@
 **AEX**（Aivora Exchange Protocol）是 Aivora 定义的跨软件 AI API 配置交换协议。协议与参考实现解耦：任何软件都可以只依据本目录的公开文档完成适配，不需要阅读 Aivora 源码、不需要接入 Aivora 服务器、不需要 Aivora 账号。
 
 - 协议版本：**1.0**
-- 状态：**已实现（Aivora 0.0.5 起），1.0 规范已冻结**
+- 状态：**已实现（Aivora 0.0.5 起），1.0 规范已定稿**
 - 文件扩展名：`.akcp`（唯一标准交换格式）
 - MIME Type：`application/vnd.aivora.akcp`
 - 加密：AES-256-GCM + PBKDF2-HMAC-SHA256
@@ -32,4 +32,4 @@ Aivora 生成一个加密的 `.akcp` 文件并通过 Android 系统分享面板�
 
 ## 参与协议讨论
 
-对规范有异议、发现歧义或需要补充字段，请开 Issue 并标注 `protocol` 标签。1.0 已冻结，向后兼容由 [版本规则](AEX-SPECIFICATION.md) 约束。
+对规范有异议、发现歧义或需要补充字段，请开 Issue 并标注 `protocol` 标签。1.0 已定稿，向后兼容由 [版本规则](AEX-SPECIFICATION.md) 约束。定稿的是协议，不是软件——Aivora 应用版本会继续更新，不影响已导出的文件。

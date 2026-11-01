@@ -109,7 +109,9 @@ Release builds are signed with a fixed certificate, so they upgrade in place. A 
 
 ## AEX exchange protocol
 
-> **Status: AEX 1.0 is frozen and implemented since 0.0.5.**
+> **Status: AEX 1.0 is finalised and implemented since 0.0.5.**
+>
+> What is fixed is the **protocol's container layout and crypto parameters — not the app**. Aivora keeps shipping updates: new features, bug fixes and UI changes never invalidate an existing `.akcp` file and require no re-integration.
 > Configuration cards and multi-select both generate `.akcp` files delivered through the Android share sheet.
 
 ### Purpose
@@ -213,4 +215,7 @@ See [Changelog](CHANGELOG.en.md).
 
 Aivora is distributed under **AGPL-3.0-only**. See [LICENSE](LICENSE).
 
-Versioning note: application and protocol versions **evolve independently**. Currently app 0.0.5 · AEX 1.0 (frozen).
+Versioning note: application and protocol versions **evolve independently**. Currently app 0.0.5 · AEX 1.0 (finalised).
+
+- **The protocol is finalised**: AEX 1.0's container layout, crypto parameters and field semantics are settled and will not change in minor revisions. Any change requires AEX 2.0, and 1.0 implementations will keep being supported.
+- **The app keeps moving**: features, UI, performance and bug fixes continue to ship in new Aivora releases without dragging the protocol along.

@@ -1,6 +1,6 @@
 # AEX Test Vectors
 
-> 状态：1.0 已冻结并实现。官方向量文件已提供在 [test-vectors/](test-vectors/README.md)，由独立的 Python 实现生成并已被 Kotlin 实现成功解密。
+> 状态：1.0 已定稿并实现。官方向量文件已提供在 [test-vectors/](test-vectors/README.md)，由独立的 Python 实现生成并已被 Kotlin 实现成功解密。
 
 ## 1. 原则
 
@@ -43,7 +43,7 @@
 
 ## 4. 跨语言互操作验证
 
-协议冻结后，需要至少两套独立实现互相验证：
+协议定稿后，需要至少两套独立实现互相验证：
 
 - Aivora（Kotlin）导出的文件，参考实现（Python）必须能解密。
 - 参考实现导出的文件，Aivora 必须能解密。
