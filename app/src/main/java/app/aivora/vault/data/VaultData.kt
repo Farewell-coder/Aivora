@@ -22,13 +22,16 @@ data class ServiceConfig(
     val notes: String = "", val enabled: Boolean = true, val isDefault: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(), val lastCheckedAt: Long = 0,
     val checkStatus: String = "未检测", val httpStatus: Int? = null,
-    val extensionsJson: String = "{}", val modelResultsJson: String = "[]"
+    val extensionsJson: String = "{}", val modelResultsJson: String = "[]",
+    val source: String? = null
 )
 @Entity(tableName = "export_records")
 data class ExportRecord(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val fileName: String, val encryptedCredential: String,
-    val configCount: Int, val exportedAt: Long = System.currentTimeMillis()
+    val configCount: Int, val exportedAt: Long = System.currentTimeMillis(),
+    val configNames: String? = null,
+    val encryptedSnapshot: String? = null
 )
 @Dao interface VaultDao {
     @Query("SELECT * FROM service_configs ORDER BY createdAt DESC") fun configs(): Flow<List<ServiceConfig>>
@@ -41,12 +44,13 @@ data class ExportRecord(
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun saveExports(records: List<ExportRecord>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun save(config: ServiceConfig): Long
     @Delete suspend fun delete(config: ServiceConfig)
+    @Delete suspend fun delete(record: ExportRecord)
     @Query("UPDATE service_configs SET isDefault=0") suspend fun clearDefaults()
     @Query("UPDATE service_configs SET isDefault=:value WHERE id=:id") suspend fun setDefault(id: Long, value: Boolean)
     @Insert suspend fun recordExport(record: ExportRecord): Long
     @Query("SELECT * FROM export_records ORDER BY exportedAt DESC") fun exports(): Flow<List<ExportRecord>>
 }
-@Database(entities = [ServiceConfig::class, ExportRecord::class], version = 2, exportSchema = true)
+@Database(entities = [ServiceConfig::class, ExportRecord::class], version = 3, exportSchema = true)
 abstract class VaultDatabase : RoomDatabase() { abstract fun dao(): VaultDao }
 
 class LocalCrypto(context: Context) {
@@ -79,14 +83,22 @@ class VaultRepository(context: Context) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE service_configs ADD COLUMN modelResultsJson TEXT NOT NULL DEFAULT '[]'")
             }
+        })
+        .addMigrations(object : androidx.room.migration.Migration(2, 3) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // 全部可空：旧数据保持原样，界面按「早期记录 / 无角标」处理。
+                db.execSQL("ALTER TABLE service_configs ADD COLUMN source TEXT")
+                db.execSQL("ALTER TABLE export_records ADD COLUMN configNames TEXT")
+                db.execSQL("ALTER TABLE export_records ADD COLUMN encryptedSnapshot TEXT")
+            }
         }).build()
     val dao = db.dao(); val crypto = LocalCrypto(context)
     suspend fun createBackup(theme: String) = app.aivora.vault.protocol.Backup.export(theme,
-        dao.allConfigs().map { app.aivora.vault.protocol.Backup.BackupConfig(it.name, it.provider, if (it.encryptedKey.isEmpty()) "" else crypto.decrypt(it.encryptedKey), it.endpoint, it.models, it.defaultModel, it.notes, it.enabled, it.createdAt, it.lastCheckedAt, it.checkStatus, it.httpStatus, it.extensionsJson, it.modelResultsJson) },
-        dao.allExports().map { app.aivora.vault.protocol.Backup.BackupExport(it.fileName, crypto.decrypt(it.encryptedCredential), it.configCount, it.exportedAt) })
+        dao.allConfigs().map { app.aivora.vault.protocol.Backup.BackupConfig(it.name, it.provider, if (it.encryptedKey.isEmpty()) "" else crypto.decrypt(it.encryptedKey), it.endpoint, it.models, it.defaultModel, it.notes, it.enabled, it.createdAt, it.lastCheckedAt, it.checkStatus, it.httpStatus, it.extensionsJson, it.modelResultsJson, it.source) },
+        dao.allExports().map { app.aivora.vault.protocol.Backup.BackupExport(it.fileName, crypto.decrypt(it.encryptedCredential), it.configCount, it.exportedAt, it.configNames, it.encryptedSnapshot?.let { enc -> runCatching { crypto.decrypt(enc) }.getOrNull() }) })
     suspend fun replaceAll(payload: app.aivora.vault.protocol.Backup.Payload, themePrefs: android.content.SharedPreferences) {
-        val configs = payload.configs.map { ServiceConfig(name = it.name, provider = it.provider, encryptedKey = if (it.apiKey.isEmpty()) "" else crypto.encrypt(it.apiKey), endpoint = it.endpoint, models = it.models, defaultModel = it.defaultModel, notes = it.notes, enabled = it.enabled, createdAt = it.createdAt, lastCheckedAt = it.lastCheckedAt, checkStatus = it.checkStatus, httpStatus = it.httpStatus, extensionsJson = it.extensionsJson, modelResultsJson = it.modelResultsJson) }
-        val exports = payload.exports.map { ExportRecord(fileName = it.fileName, encryptedCredential = crypto.encrypt(it.credential), configCount = it.configCount, exportedAt = it.exportedAt) }
+        val configs = payload.configs.map { ServiceConfig(name = it.name, provider = it.provider, encryptedKey = if (it.apiKey.isEmpty()) "" else crypto.encrypt(it.apiKey), endpoint = it.endpoint, models = it.models, defaultModel = it.defaultModel, notes = it.notes, enabled = it.enabled, createdAt = it.createdAt, lastCheckedAt = it.lastCheckedAt, checkStatus = it.checkStatus, httpStatus = it.httpStatus, extensionsJson = it.extensionsJson, modelResultsJson = it.modelResultsJson, source = it.source) }
+        val exports = payload.exports.map { ExportRecord(fileName = it.fileName, encryptedCredential = crypto.encrypt(it.credential), configCount = it.configCount, exportedAt = it.exportedAt, configNames = it.configNames, encryptedSnapshot = it.snapshot?.let { s -> crypto.encrypt(s) }) }
         db.withTransaction {
             dao.clearConfigs(); dao.clearExports(); dao.saveConfigs(configs); dao.saveExports(exports)
         }

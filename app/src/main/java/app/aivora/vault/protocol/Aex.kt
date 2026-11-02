@@ -229,7 +229,8 @@ object Aex {
         val format = header["format"]?.jsonPrimitive?.content ?: throw Failure.InvalidHeader()
         if (format != FORMAT) throw Failure.InvalidHeader()
         val version = header["protocolVersion"]?.jsonPrimitive?.content ?: throw Failure.InvalidHeader()
-        if (!version.startsWith("1.")) throw Failure.UnsupportedVersion()
+        // 精确匹配：1.x 若将来有不兼容改动，旧版本不得误判为兼容。
+        if (version != PROTOCOL_VERSION) throw Failure.UnsupportedVersion()
         if (header["kdf"]?.jsonPrimitive?.content != KDF) throw Failure.UnsupportedParameter()
         if (header["cipher"]?.jsonPrimitive?.content != CIPHER) throw Failure.UnsupportedParameter()
         if (header["tagBits"]?.jsonPrimitive?.content?.toIntOrNull() != TAG_BITS) throw Failure.UnsupportedParameter()
@@ -315,4 +316,49 @@ object Aex {
         val base = cleaned.ifBlank { "Aivora" }
         return if (base.endsWith(EXTENSION)) base else base + EXTENSION
     }
+
+    // ---------------------------------------------------------------- snapshot
+
+    /**
+     * 把导出时的 profile 列表序列化为快照 JSON，供「导出记录」保存与重新导出使用。
+     * 内容含明文 API Key，调用方必须先加密再落库。
+     */
+    fun snapshot(profiles: List<Profile>): String = buildJsonObject {
+        putJsonArray("profiles") {
+            profiles.forEach { p ->
+                addJsonObject {
+                    put("id", p.id)
+                    put("name", p.name)
+                    if (p.provider.isNotEmpty()) put("provider", p.provider)
+                    if (p.baseUrl.isNotEmpty()) put("baseUrl", p.baseUrl)
+                    if (p.apiKey.isNotEmpty()) put("apiKey", p.apiKey)
+                    if (p.models.isNotEmpty()) putJsonArray("models") { p.models.forEach { add(it) } }
+                    if (p.defaultModel.isNotEmpty()) put("defaultModel", p.defaultModel)
+                    if (p.description.isNotEmpty()) put("description", p.description)
+                    if (p.extra.isNotEmpty()) put("extra", p.extra)
+                }
+            }
+        }
+    }.toString()
+
+    /** 从快照 JSON 还原 profile 列表。结构异常时返回空列表。 */
+    fun fromSnapshot(json: String): List<Profile> = runCatching {
+        val array = Json.parseToJsonElement(json).jsonObject["profiles"]?.jsonArray ?: return emptyList()
+        array.mapNotNull { element ->
+            val obj = element.jsonObject
+            val name = obj["name"]?.jsonPrimitive?.content.orEmpty()
+            if (name.isBlank()) return@mapNotNull null
+            Profile(
+                id = obj["id"]?.jsonPrimitive?.content.orEmpty().ifBlank { name },
+                name = name,
+                provider = obj["provider"]?.jsonPrimitive?.content.orEmpty(),
+                baseUrl = obj["baseUrl"]?.jsonPrimitive?.content.orEmpty(),
+                apiKey = obj["apiKey"]?.jsonPrimitive?.content.orEmpty(),
+                models = obj["models"]?.jsonArray?.mapNotNull { it.jsonPrimitive.content.takeIf(String::isNotBlank) }.orEmpty(),
+                defaultModel = obj["defaultModel"]?.jsonPrimitive?.content.orEmpty(),
+                description = obj["description"]?.jsonPrimitive?.content.orEmpty(),
+                extra = obj["extra"] as? JsonObject ?: JsonObject(emptyMap())
+            )
+        }
+    }.getOrDefault(emptyList())
 }

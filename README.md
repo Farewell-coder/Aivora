@@ -46,6 +46,9 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 | 服务商模板 | 内置主流服务商的 Endpoint 模板，也可完全自定义 |
 | 模型检测 | 自动拉取 `/models`，串行检测每个模型可用性，展示状态、HTTP 码、耗时与错误摘要，支持中断与单项重测 |
 | 配置交换 | 导出时可加密生成独立凭证保护的文件，导入需凭证验证 |
+| 多格式导入 | 支持 Chatbox、Continue、LobeChat、CC Switch、New API、Cherry Studio、`.env` 等第三方格式，按内容自动识别，导入前可预览勾选 |
+| 导出记录 | 每次导出记一条，保存当时的完整快照与凭证，可查看、复制、重新导出、重新分享，支持长按批量删除 |
+| 端点纠正 | 自动补全 `/v1`、剥离重复的接口后缀；官方模板地址不改动，检测失败时尝试候选路径 |
 | 全量备份 | Aivora 专用加密备份，跨设备恢复时用新设备密钥重新加密，导入前二次确认 |
 | 界面 | Material 3，浅色 / 深色 / 跟随系统三种外观，支持系统身份验证 |
 
@@ -90,10 +93,10 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 
 ### 最新版本
 
-当前发布版本：**0.0.5**
+当前发布版本：**0.0.6**
 
 - 下载页面：[github.com/Farewell-coder/Aivora/releases/latest](https://github.com/Farewell-coder/Aivora/releases/latest)
-- 安装包命名：`Aivora-v0.0.5.apk`
+- 安装包命名：`Aivora-v0.0.6.apk`
 
 ### 安装说明
 

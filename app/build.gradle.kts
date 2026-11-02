@@ -12,9 +12,9 @@ android {
         applicationId = "app.aivora.vault"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
+        versionCode = 6
         ndk { abiFilters += "arm64-v8a" }
-        versionName = "0.0.5"
+        versionName = "0.0.6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

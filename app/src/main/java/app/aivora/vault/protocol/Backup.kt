@@ -16,10 +16,13 @@ object Backup {
     private val magic = "AIVORA-BACKUP".toByteArray()
     private const val headerSize = 87
     private val json = Json { encodeDefaults = true }
-    @Serializable data class BackupConfig(val name: String, val provider: String, val apiKey: String, val endpoint: String, val models: String = "", val defaultModel: String = "", val notes: String = "", val enabled: Boolean = true, val createdAt: Long = 0, val lastCheckedAt: Long = 0, val checkStatus: String = "未检测", val httpStatus: Int? = null, val extensionsJson: String = "{}", val modelResultsJson: String = "[]")
-    @Serializable data class BackupExport(val fileName: String, val credential: String, val configCount: Int, val exportedAt: Long)
-    @Serializable data class Payload(val schema: String = "aivora.full-backup/1", val theme: String, val configs: List<BackupConfig>, val exports: List<BackupExport>)
+    @Serializable data class BackupConfig(val name: String, val provider: String, val apiKey: String, val endpoint: String, val models: String = "", val defaultModel: String = "", val notes: String = "", val enabled: Boolean = true, val createdAt: Long = 0, val lastCheckedAt: Long = 0, val checkStatus: String = "未检测", val httpStatus: Int? = null, val extensionsJson: String = "{}", val modelResultsJson: String = "[]", val source: String? = null)
+    @Serializable data class BackupExport(val fileName: String, val credential: String, val configCount: Int, val exportedAt: Long, val configNames: String? = null, val snapshot: String? = null)
+    @Serializable data class Payload(val schema: String = SCHEMA_V2, val theme: String, val configs: List<BackupConfig>, val exports: List<BackupExport>)
     data class Result(val bytes: ByteArray, val credential: String)
+
+    const val SCHEMA_V1 = "aivora.full-backup/1"
+    const val SCHEMA_V2 = "aivora.full-backup/2"
 
     fun export(theme: String, configs: List<BackupConfig>, exports: List<BackupExport>): Result {
         val credential = Akcp.newCredential()
@@ -52,7 +55,8 @@ object Backup {
                 updateAAD(header)
             }
             val payload = json.decodeFromString<Payload>(cipher.doFinal(bytes, headerSize, length).toString(Charsets.UTF_8))
-            require(payload.schema == "aivora.full-backup/1") { "备份类型不受支持" }
+            // 兼容 /1（0.0.5 及更早导出的备份）：新字段走默认值。
+            require(payload.schema == SCHEMA_V1 || payload.schema == SCHEMA_V2) { "备份类型不受支持" }
             payload
         } catch (_: javax.crypto.AEADBadTagException) { throw IllegalArgumentException("凭证错误或备份文件已被修改") }
         catch (e: IllegalArgumentException) { throw e }
