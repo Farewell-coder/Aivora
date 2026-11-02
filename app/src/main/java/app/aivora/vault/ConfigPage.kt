@@ -36,6 +36,7 @@ import kotlinx.serialization.json.Json
  *  - 每条卡片只保留勾选框，隐藏编辑/导出/复制/删除，避免误触；
  *  - 底部固定操作栏替换导航栏，含全选、批量导出、批量删除。
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ConfigPage(
     configs: List<ServiceConfig>,
@@ -49,10 +50,10 @@ fun ConfigPage(
 ) {
     var search by remember { mutableStateOf("") }
     var deleting by remember { mutableStateOf<ServiceConfig?>(null) }
-    var exporting by remember { mutableStateOf<ServiceConfig?>(null) }
+    // 导出目标：单条是 size==1，批量是所选的全部。两者共用同一个弹窗。
+    var exporting by remember { mutableStateOf<List<ServiceConfig>?>(null) }
     var selecting by remember { mutableStateOf(false) }
     var picked by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var sharing by remember { mutableStateOf(false) }
     var confirmBulkDelete by remember { mutableStateOf(false) }
 
     // 导入流程状态
@@ -104,30 +105,41 @@ fun ConfigPage(
     if (filtered.isEmpty()) {
         AppCard { Empty("还没有匹配的服务配置") }
     } else filtered.forEach { c ->
-        AppCard {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if (selecting) {
-                    Checkbox(c.id in picked, { on -> picked = if (on) picked + c.id else picked - c.id })
-                    Spacer(Modifier.width(4.dp))
-                }
-                Box(Modifier.weight(1f).clickable(enabled = selecting) {
-                    picked = if (c.id in picked) picked - c.id else picked + c.id
-                }) { ConfigSummary(c) }
+        val cardModifier = if (selecting) Modifier.fillMaxWidth()
+        else Modifier.fillMaxWidth().combinedClickable(
+            onClick = { },
+            onLongClick = {
+                // 长按任一配置进入选择模式，并把它勾上（与记录页行为一致）。
+                selecting = true
+                picked = picked + c.id
             }
-            // 选择模式下隐藏单条操作
-            if (!selecting) {
-                Spacer(Modifier.height(6.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                IconButton({ edit(c) }, Modifier.size(40.dp)) { Icon(Lucide.Edit, "编辑", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
-                IconButton({ exporting = c }, Modifier.size(40.dp)) { Icon(Lucide.Export, "导出", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
-                IconButton({
-                    try {
-                        if (c.endpoint.isBlank() || c.encryptedKey.isBlank()) error("Endpoint 或 API Key 未填写")
-                        clipboard.setText(AnnotatedString(c.endpoint + "\n" + repo.crypto.decrypt(c.encryptedKey).trim()))
-                        Toast.makeText(context, "Endpoint 和 API Key 已复制", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) { Toast.makeText(context, e.message ?: "配置不完整", Toast.LENGTH_SHORT).show() }
-                }, Modifier.size(40.dp)) { Icon(Lucide.Copy, "复制 Endpoint 和 API Key", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
-                IconButton({ deleting = c }, Modifier.size(40.dp)) { Icon(Lucide.Trash, "删除", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error) }
+        )
+        AppCard {
+            Column(cardModifier) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (selecting) {
+                        Checkbox(c.id in picked, { on -> picked = if (on) picked + c.id else picked - c.id })
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    Box(Modifier.weight(1f).clickable(enabled = selecting) {
+                        picked = if (c.id in picked) picked - c.id else picked + c.id
+                    }) { ConfigSummary(c) }
+                }
+                // 选择模式下隐藏单条操作
+                if (!selecting) {
+                    Spacer(Modifier.height(6.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                    IconButton({ edit(c) }, Modifier.size(40.dp)) { Icon(Lucide.Edit, "编辑", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
+                    IconButton({ exporting = listOf(c) }, Modifier.size(40.dp)) { Icon(Lucide.Export, "导出", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
+                    IconButton({
+                        try {
+                            if (c.endpoint.isBlank() || c.encryptedKey.isBlank()) error("Endpoint 或 API Key 未填写")
+                            clipboard.setText(AnnotatedString(c.endpoint + "\n" + repo.crypto.decrypt(c.encryptedKey).trim()))
+                            Toast.makeText(context, "Endpoint 和 API Key 已复制", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) { Toast.makeText(context, e.message ?: "配置不完整", Toast.LENGTH_SHORT).show() }
+                    }, Modifier.size(40.dp)) { Icon(Lucide.Copy, "复制 Endpoint 和 API Key", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
+                    IconButton({ deleting = c }, Modifier.size(40.dp)) { Icon(Lucide.Trash, "删除", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error) }
+                    }
                 }
             }
         }
@@ -145,14 +157,10 @@ fun ConfigPage(
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabelButton({
-                    scope.launch {
-                        if (sharing) return@launch
-                        val targets = configs.filter { it.id in picked }
-                        if (targets.isEmpty()) { toast("请先勾选要导出的配置"); return@launch }
-                        sharing = true
-                        try { shareProfiles(context, repo, appVersion, targets) } catch (e: Exception) { toast(e.message ?: "导出失败") } finally { sharing = false }
-                    }
-                }, Lucide.Export, if (sharing) "生成中" else "导出所选", Modifier.weight(1f), enabled = !sharing && picked.isNotEmpty())
+                    // 与单条导出走同一个弹窗：先显示凭证，再让你选「导出」或「分享」。
+                    val targets = configs.filter { it.id in picked }
+                    if (targets.isEmpty()) toast("请先勾选要导出的配置") else exporting = targets
+                }, Lucide.Export, "导出所选", Modifier.weight(1f), enabled = picked.isNotEmpty())
                 OutlinedButton(
                     { confirmBulkDelete = true },
                     Modifier.weight(1f),
@@ -200,7 +208,26 @@ fun ConfigPage(
         )
     }
 
-    exporting?.let { c -> ExportDialog(c, repo, appVersion, { exporting = null }, toast) }
+    exporting?.let { targets ->
+        val single = targets.size == 1
+        val fileName = if (single) Aex.sanitizeFileName(targets.first().name)
+        else "Aivora-${targets.size}-configs" + Aex.EXTENSION
+        ExportSheet(
+            title = if (single) "导出「${targets.first().name}」" else "导出 ${targets.size} 个配置",
+            fileName = fileName,
+            profiles = remember(targets) { targets.map { repo.toAex(it) } },
+            header = if (single) null else {
+                {
+                    Text("包含配置", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    targets.forEach { Text("· ${it.name}", fontSize = 12.sp) }
+                }
+            },
+            repo = repo,
+            appVersion = appVersion,
+            close = { exporting = null },
+            toast = toast
+        )
+    }
 
     // ---- 导入：凭证对话框（AEX / 旧 AKCP）
     val enc = detected as? ImportFlow.Detected.Encrypted

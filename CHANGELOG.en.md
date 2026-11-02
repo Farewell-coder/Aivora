@@ -62,6 +62,27 @@ When `/models` fails outright, diagnostics try up to three candidate paths. Succ
 
 The first card in Settings, on by default. Turning it off disables normalization, candidate probing and the note, and applies only to future operations.
 
+### Fixed: bulk export gave no credential
+
+An old defect that dates back to 0.0.5 and shipped with the initial 0.0.6 release.
+
+"Export selected" called `shareProfiles()`, a straight line from "generate" to "raise the system share sheet" — no dialog at all. The credential was created in memory and never surfaced, so the user could neither read nor copy it. The recipient got a file with no key, which is a failed hand-off.
+
+Single export went through `ExportDialog`, which does show the credential. Two code paths, two different behaviours.
+
+Both now share one dialog (`ExportSheet`):
+
+- Single and bulk behave identically: the credential is shown first and can be copied, then the user picks Export or Share
+- Bulk additionally lists the included configuration names; the title reads "Export N configurations" and the file is `Aivora-N-configs.akcp`
+- Credential derivation (600,000 PBKDF2 rounds) runs off the main thread; the buttons show a spinner and stay disabled while it runs
+- Removed `shareProfiles()` and `ExportDialog` (`ExportSheet` supersedes the latter)
+
+Record timing was corrected along the way: `recordExport` used to run **before** `startActivity`, so backing out of the share sheet still left a record behind — an orphan entry for a file nobody received. It is now written after the local write succeeds, or just before the share sheet is raised; closing the dialog writes nothing.
+
+### New: long-press to enter selection mode
+
+Long-pressing any configuration card now enters selection mode and selects that card, matching the gesture already used on the export history screen. Previously selection could only be entered from the top bar.
+
 ### Reworked: selection mode on the configurations screen
 
 - The fixed bottom action bar **replaces** the bottom navigation; two stacked bars would be noise

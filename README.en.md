@@ -112,7 +112,7 @@ Release builds are signed with a fixed certificate, so they upgrade in place. A 
 > **Status: AEX 1.0 is finalised and implemented since 0.0.5.**
 >
 > What is fixed is the **protocol's container layout and crypto parameters — not the app**. Aivora keeps shipping updates: new features, bug fixes and UI changes never invalidate an existing `.akcp` file and require no re-integration.
-> Configuration cards and multi-select both generate `.akcp` files delivered through the Android share sheet.
+> Configuration cards and multi-select both generate `.akcp` files, and both show the credential in a dialog first, then let you Export or Share.
 
 ### Purpose
 
@@ -138,10 +138,11 @@ The payload inside is JSON, but that is only an internal serialization detail �
 Planned flow:
 
 ```text
-Configuration → Export → generate .akcp (independent credential) → system share sheet → target app
+Configuration → Export (single card, or multi-select) → dialog shows credential → generate .akcp (independent credential) → Export saves locally, or Share opens the system share sheet → target app
 ```
 
 - **Two entry points**: Export saves to a user-chosen location, Share opens the system share sheet; both produce byte-identical `.akcp` files
+- **Single and batch share one dialog**: batch additionally lists the included configuration names; the credential must always be shown, and skipping the dialog to jump straight to the share sheet is not allowed
 - Uses the native Android Sharesheet; no imitation share panel is drawn
 - Sharing writes the file to the app-private cache and hands it out through a FileProvider `content://` URI; real paths are never exposed
 - The file carries no credential: the recipient **must enter the 52-character credential separately** to decrypt it, and it is never sent alongside the file
