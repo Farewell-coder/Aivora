@@ -1,0 +1,151 @@
+name: build
+
+# 【职责】Aivora 的 CI：单元测试 + 正式签名 release APK + 产物下载 / Release 发布。
+#
+# 触发：
+#   · push / PR        → 测试 + 构建，APK 传成 artifact（保留 90 天）
+#   · push tag v*      → 额外发 GitHub Release（永久链接）
+#   · workflow_dispatch → 手动跑
+#
+# 【签名】密钥不入库，运行时从 Secrets 还原：
+#   KEYSTORE_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD
+# 生成工作区根目录的 keystore.properties，app/build.gradle.kts 会自动读取。
+# 缺任一 Secret 直接失败，不伪造临时签名。
+#
+# 【注意 gradle.properties】工程原有 android.aapt2FromMavenOverride 指向手机本地路径，
+# 已在版本库中移除（runner 是 x86-64，用 Maven 版 aapt2 即可）。
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 装 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 装 Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      # 工程 compileSdk = 35、build-tools 由 AGP 决定，这里显式装一份 35.0.0
+      - name: 安装编译平台
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: 缓存 Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle', '**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: 还原签名密钥
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::缺少签名 Secrets（KEYSTORE_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD）"
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "${GITHUB_WORKSPACE}/ci-keystore.jks"
+          if [ ! -s "${GITHUB_WORKSPACE}/ci-keystore.jks" ]; then
+            echo "::error::KEYSTORE_BASE64 解码失败，请确认是完整的 base64 内容"
+            exit 1
+          fi
+          cat > "${GITHUB_WORKSPACE}/keystore.properties" <<EOF
+          storeFile=${GITHUB_WORKSPACE}/ci-keystore.jks
+          storePassword=${KEYSTORE_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          keyPassword=${KEY_PASSWORD}
+          EOF
+          chmod 600 "${GITHUB_WORKSPACE}/ci-keystore.jks" "${GITHUB_WORKSPACE}/keystore.properties"
+          keytool -list -keystore "${GITHUB_WORKSPACE}/ci-keystore.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
+          echo "签名配置就绪"
+
+      - name: 赋权 gradlew
+        run: chmod +x ./gradlew
+
+      - name: 单元测试
+        run: ./gradlew test --stacktrace -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
+
+      - name: 编译 release（含签名）
+        run: ./gradlew assembleRelease --stacktrace -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
+
+      - name: 列出产物
+        run: ls -lh app/build/outputs/apk/release/ || true
+
+      - name: 校验签名
+        run: |
+          set -e
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort | tail -n 1)"
+          shopt -s nullglob
+          APKS=(app/build/outputs/apk/release/*.apk)
+          if [ "${#APKS[@]}" -eq 0 ]; then
+            echo "::error::没有生成任何 APK"
+            exit 1
+          fi
+          for a in "${APKS[@]}"; do
+            echo "===== $a"
+            "$APKSIGNER" verify --print-certs "$a"
+          done
+          # 若产物文件名里带 unsigned，说明签名配置没生效，直接失败
+          for a in "${APKS[@]}"; do
+            case "$a" in *unsigned*) echo "::error::产物未签名：$a"; exit 1;; esac
+          done
+
+      - name: 上传 APK（Artifacts，保留 90 天）
+        uses: actions/upload-artifact@v4
+        with:
+          name: aivora-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: 上传测试报告（失败时便于排查）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+
+      - name: 发布到 GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Aivora ${{ github.ref_name }}
+          body: |
+            Aivora ${{ github.ref_name }}
+
+            由 GitHub Actions 自动构建，使用与历史版本相同的正式签名证书，可直接覆盖安装升级。
+
+            适用架构：arm64-v8a
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true
+          files: app/build/outputs/apk/release/*.apk

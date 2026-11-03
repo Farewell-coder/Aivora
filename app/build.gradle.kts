@@ -17,11 +17,40 @@ android {
         versionName = "0.0.6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    // 【签名配置】读 keystore.properties（不入版本库，见 .gitignore）。
+    // 文件不存在时该 signingConfig 为空配置，release 仍能构建但产物是 unsigned。
+    // CI 上由 workflow 从 Secrets 还原该文件。
+    signingConfigs {
+        create("release") {
+            val ksPropsFile = rootProject.file("keystore.properties")
+            if (ksPropsFile.exists()) {
+                val ksProps = java.util.Properties().apply {
+                    ksPropsFile.inputStream().use { load(it) }
+                }
+                val sf = ksProps.getProperty("storeFile")
+                if (sf != null) {
+                    // 支持相对路径（相对工程根）与绝对路径
+                    storeFile = rootProject.file(sf)
+                    storePassword = ksProps.getProperty("storePassword")
+                    keyAlias = ksProps.getProperty("keyAlias")
+                    keyPassword = ksProps.getProperty("keyPassword")
+                    enableV1Signing = false
+                    enableV2Signing = true
+                    enableV3Signing = true
+                }
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // 只有真的读到了密钥才挂签名，否则保持 unsigned（不伪造临时签名）
+            signingConfigs.findByName("release")?.let {
+                if (it.storeFile != null) signingConfig = it
+            }
         }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
