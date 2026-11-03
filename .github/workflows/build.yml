@@ -144,18 +144,40 @@ jobs:
           path: app/build/reports/tests/
           if-no-files-found: ignore
 
+      # 先解析公告，再发布。action-gh-release 的 body_path 不支持条件表达式，
+      # 所以把「本次 tag 对应的公告文件 + 标题」先算成 step outputs。
+      - name: 解析发布公告
+        id: notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -e
+          TAG="${GITHUB_REF_NAME}"
+          FILE="release-notes/${TAG}.md"
+          if [ -f "$FILE" ]; then
+            TITLE=$(grep -m1 '^# ' "$FILE" | sed 's/^# *//')
+            {
+              echo "file=$FILE"
+              echo "title=${TITLE:-Aivora ${TAG}}"
+            } >> "$GITHUB_OUTPUT"
+            echo "使用仓库内公告：$FILE"
+          else
+            echo "::warning::未找到 release-notes/${TAG}.md，将退回自动生成的发布说明"
+            echo "file=" >> "$GITHUB_OUTPUT"
+            echo "title=Aivora ${TAG}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 发布到 GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: Aivora ${{ github.ref_name }}
-          body: |
-            Aivora ${{ github.ref_name }}
-
-            由 GitHub Actions 自动构建，使用与历史版本相同的正式签名证书，可直接覆盖安装升级。
-
-            适用架构：arm64-v8a
+          # 【标题】取 release-notes/<tag>.md 第一行的 "# " 标题。
+          # 不在这里硬编码，否则每次 tag 构建都会把手写标题覆盖回通用文案。
+          name: ${{ steps.notes.outputs.title }}
+          # 【正文】优先用仓库里的 release-notes/<tag>.md；
+          # 没有该文件时退回自动生成的发布说明，绝不覆盖成通用模板。
+          body_path: ${{ steps.notes.outputs.file }}
+          generate_release_notes: ${{ steps.notes.outputs.file == '' }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           fail_on_unmatched_files: true
