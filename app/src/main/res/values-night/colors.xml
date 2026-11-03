@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 系统深色模式下，启动窗口用深色底，避免冷启动时闪一下白 -->
+    <color name="background_light">#171018</color>
+</resources>

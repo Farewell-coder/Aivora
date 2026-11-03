@@ -1,2 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources><color name="icon_background">#7466DC</color></resources>
+<resources>
+    <!--
+      自适应图标的背景色。
+      新图标是一张自带白色底、内部铺满多彩渐变色块的图，
+      所以背景取图片自身的白色，裁切成圆形 / 方形 / 圆角矩形时四周才不会有异色边。
+      此前是 #7466DC（旧图标的紫色底），配新前景会露出紫边，已改掉。
+    -->
+    <color name="icon_background">#FFFFFF</color>
+    <!-- 浅色主题背景，与 Kotlin 侧 lightColorScheme(background = 0xFFFEF7FF) 保持一致 -->
+    <color name="background_light">#FEF7FF</color>
+</resources>

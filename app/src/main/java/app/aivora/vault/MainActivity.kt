@@ -1,14 +1,17 @@
 package app.aivora.vault
 
+import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -48,14 +51,65 @@ import java.util.Date
 private val Brand = Color(0xFF6750A4)
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 全局唯一的 edge-to-edge 入口：状态栏 / 导航栏透明，内容延伸至屏幕边缘。
+        // 图标颜色不在这里写死，由 AivoraTheme 按当前主题的深浅实时设置，
+        // 这样系统深色模式、手动切浅色/深色都能保持一致。
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val repo = (application as AivoraApplication).repository
         val prefs = getSharedPreferences("appearance", Context.MODE_PRIVATE)
         setContent {
-            var unlocked by remember { mutableStateOf(!prefs.getBoolean("appLock", false)) }
-            MaterialTheme { Surface(Modifier.fillMaxSize()) { if (unlocked) AivoraApp(repo) else LockScreen { authenticate(this) { unlocked = it } } } }
+            // 锁定界面此前被包在裸 MaterialTheme 里，跟随的是系统深浅而不是应用设置，
+            // 于是出现「夜间模式下锁定页仍是亮的」。改为一并走 AivoraTheme。
+            val dark = resolveDark(prefs)
+            AivoraTheme(dark) {
+                var unlocked by remember { mutableStateOf(!prefs.getBoolean("appLock", false)) }
+                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                    if (unlocked) AivoraApp(repo) else LockScreen { authenticate(this) { unlocked = it } }
+                }
+            }
         }
     }
+}
+
+/** 读取外观设置并解析出「当前是否深色」。跟随系统时用 isSystemInDarkTheme 的等价判定。 */
+@Composable
+private fun resolveDark(prefs: android.content.SharedPreferences): Boolean {
+    val mode = runCatching { ThemeMode.valueOf(prefs.getString("theme", "SYSTEM")!!) }.getOrDefault(ThemeMode.SYSTEM)
+    return when (mode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+}
+
+/**
+ * 全应用唯一的主题入口。
+ *
+ * 除了配色，还负责状态栏 / 导航栏图标颜色的跟随：
+ *  - 深色主题 → 浅色图标（isAppearanceLightStatusBars = false）
+ *  - 浅色主题 → 深色图标（isAppearanceLightStatusBars = true）
+ * 必须在 setContent 内部调用，才能随主题变化重新执行；而在 Activity 的
+ * onCreate 里设一次会在切换主题后失效，这正是顶部图标看不清的原因。
+ */
+@Composable
+fun AivoraTheme(dark: Boolean, content: @Composable () -> Unit) {
+    val scheme = if (dark) {
+        darkColorScheme(primary = Color(0xFFD0BCFF), primaryContainer = Color(0xFF4F378B))
+    } else {
+        lightColorScheme(primary = Brand, background = Color(0xFFFEF7FF), surface = Color.White)
+    }
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !dark
+                isAppearanceLightNavigationBars = !dark
+            }
+        }
+    }
+    MaterialTheme(scheme, shapes = Shapes(medium = RoundedCornerShape(20.dp), large = RoundedCornerShape(28.dp)), content = content)
 }
 private fun authenticate(activity: FragmentActivity, done: (Boolean) -> Unit) {
     val prompt = BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), object : BiometricPrompt.AuthenticationCallback() {
@@ -66,7 +120,10 @@ private fun authenticate(activity: FragmentActivity, done: (Boolean) -> Unit) {
 }
 @Composable private fun LockScreen(auth: () -> Unit) {
     LaunchedEffect(Unit) { auth() }
-    Column(Modifier.fillMaxSize().padding(32.dp), Arrangement.Center, Alignment.CenterHorizontally) { Icon(Lucide.Lock, null, Modifier.size(44.dp), tint = Brand); Spacer(Modifier.height(18.dp)); Text("Aivora 已锁定", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Spacer(Modifier.height(18.dp)); LabelButton(auth, Lucide.Lock, "验证身份") }
+    // 锁定页是全屏独立页面，同样走 edge-to-edge；用 safeDrawing 让内容避开状态栏与导航栏。
+    Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing), contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(32.dp), Arrangement.Center, Alignment.CenterHorizontally) { Icon(Lucide.Lock, null, Modifier.size(44.dp), tint = Brand); Spacer(Modifier.height(18.dp)); Text("Aivora 已锁定", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Spacer(Modifier.height(18.dp)); LabelButton(auth, Lucide.Lock, "验证身份") }
+    }
 }
 enum class Page(val title: String) { Configs("服务配置"), Diagnostics("密钥检测"), Records("导出记录"), Settings("设置"), About("关于"), Protocol("适配协议") }
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
@@ -95,11 +152,14 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
         } else authenticate(activity) { if (it) { prefs.edit().putBoolean("appLock", false).apply(); locked = false } }
     }
     val dark = when (themeMode) { ThemeMode.SYSTEM -> isSystemInDarkTheme(); ThemeMode.LIGHT -> false; ThemeMode.DARK -> true }
-    val scheme = if (dark) darkColorScheme(primary = Color(0xFFD0BCFF), primaryContainer = Color(0xFF4F378B)) else lightColorScheme(primary = Brand, background = Color(0xFFFEF7FF), surface = Color.White)
-    MaterialTheme(scheme, shapes = Shapes(medium = RoundedCornerShape(20.dp), large = RoundedCornerShape(28.dp))) {
-        Box(Modifier.fillMaxSize().background(scheme.background)) {
+    AivoraTheme(dark) {
+        Box(Modifier.fillMaxSize().background(Color.Transparent)) {
+            // 背景延伸到状态栏后面，页面内容则按 insets 让位，避免被时间/电量图标压住。
             Scaffold(containerColor = Color.Transparent, snackbarHost = { SnackbarHost(snack) }) { pad ->
                 Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+                    // edge-to-edge 下 Scaffold 不吃状态栏 inset，这里显式让位：
+                    // 背景仍延伸到状态栏后面，只把内容往下推，避免被时间/电量图标压住。
+                    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
                     Spacer(Modifier.height(20.dp)); PageHeader(page) { page = if (page == Page.Protocol) Page.About else if (page == Page.About) Page.Settings else Page.Configs }
                     when (page) {
                         Page.Configs -> ConfigPage(configs, repo, packageVersion(LocalContext.current), endpointFix, { editing = it; showEditor = true }, { editing = null; showEditor = true }, { page = it }) { message = it }

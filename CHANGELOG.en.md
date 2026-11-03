@@ -6,6 +6,46 @@ What each release added, changed and fixed is recorded here, so the README does 
 
 ---
 
+## v0.0.7 · Transparent system bars, new icon
+
+This release is purely visual plus system-bar handling. No functional or data-structure changes — configs, export history and backups are untouched.
+
+### Reworked: status and navigation bars go fully transparent (edge-to-edge)
+
+The status bar used to be its own colour strip; the page background stopped dead underneath it. Now the background runs to the very top and the system bar is just icons floating over it.
+
+- One entry point only: `enableEdgeToEdge()` in `MainActivity.onCreate` — no per-screen configuration
+- All four tabs, the lock screen, About and the Protocol page behave the same
+- Content is inset via `WindowInsets`, so headings are never covered by the clock or battery icons
+- The bottom navigation keeps its existing `navigationBarsPadding()`, so the gesture area gets no extra dead space
+
+### Fixed: the lock screen stayed light in dark mode
+
+The lock screen was wrapped in a bare `MaterialTheme`, which follows the **system** light/dark state rather than the appearance chosen inside the app. Set the app to dark while the system stayed light, and the lock screen rendered light.
+
+It now uses the same `AivoraTheme` as the rest of the app, so it follows the app setting.
+
+### Fixed: status bar icon colour did not follow the theme
+
+On dark backgrounds the icons never switched to light, making them hard to read. The cause: the colour was set once when the Activity was created and never re-applied after a theme switch.
+
+`AivoraTheme` now sets `isAppearanceLightStatusBars` / `isAppearanceLightNavigationBars` inside a `SideEffect`, driven by the current light/dark value, so a switch takes effect immediately.
+
+### New: application icon
+
+- Replaced every `ic_launcher.png` / `ic_launcher_round.png` / `ic_launcher_foreground.png` under `mipmap-*`
+- The adaptive-icon background changed from the old `#7466DC` to `#FFFFFF`: the new artwork carries its own white base and fills the canvas, so the old purple showed as a fringe under circular masks
+- The foreground sits in a 108dp canvas at roughly 86% scale, so circular, squircle and rounded-square masks all crop it safely
+
+### Launch window
+
+Added `Theme.Aivora` with transparent system bars and a `windowBackground` matching the theme background, so a cold start no longer flashes the default white status bar. In dark mode the launch background is dark (`values-night`).
+
+### Verification
+
+- All 59 unit tests pass (`0 failures / 0 errors`)
+- In-place install verified on device (`versionCode=7`, data preserved)
+
 ## v0.0.6 · Export history, multi-format import, automatic endpoint correction
 
 ### New: export history

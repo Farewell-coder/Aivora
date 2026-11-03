@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      启动窗口主题。
+      状态栏 / 导航栏设为透明，配合 MainActivity 的 enableEdgeToEdge()，
+      应用一启动就不会出现系统默认的白色状态栏条带。
+      windowBackground 与浅色主题背景一致，避免冷启动闪白。
+    -->
+    <style name="Theme.Aivora" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/background_light</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+</resources>
