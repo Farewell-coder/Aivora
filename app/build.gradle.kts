@@ -58,7 +58,13 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     testOptions {
-        unitTests.all { it.systemProperty("akcp.interop", System.getProperty("akcp.interop")) }
+        // 仅在真正传入了 -Dakcp.interop 时才透传给测试 JVM。
+        // 不能直接写 it.systemProperty(name, System.getProperty(name))：
+        // 值为 null 时 Gradle 会转成字符串 "null"，测试里 `?: return` 的判空失效，
+        // 进而去 File("null") 下写文件，在 CI 上报 FileNotFoundException 而构建失败。
+        unitTests.all {
+            System.getProperty("akcp.interop")?.let { p -> it.systemProperty("akcp.interop", p) }
+        }
     }
     buildFeatures { compose = true }
     packaging { resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*", "org/bouncycastle/pqc/**", "org/bouncycastle/x509/CertPathReviewerMessages*.properties") }
