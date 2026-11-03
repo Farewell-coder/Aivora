@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -24,7 +26,7 @@ android {
         create("release") {
             val ksPropsFile = rootProject.file("keystore.properties")
             if (ksPropsFile.exists()) {
-                val ksProps = java.util.Properties().apply {
+                val ksProps = Properties().apply {
                     ksPropsFile.inputStream().use { load(it) }
                 }
                 val sf = ksProps.getProperty("storeFile")
