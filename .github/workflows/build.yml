@@ -98,7 +98,7 @@ jobs:
       - name: 列出产物
         run: ls -lh app/build/outputs/apk/release/ || true
 
-      - name: 校验签名
+      - name: 校验签名与产物命名
         run: |
           set -e
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort | tail -n 1)"
@@ -116,6 +116,17 @@ jobs:
           for a in "${APKS[@]}"; do
             case "$a" in *unsigned*) echo "::error::产物未签名：$a"; exit 1;; esac
           done
+          # 【产物命名】必须与 versionName 一致，形如 Aivora-v0.0.7.apk。
+          # 命名规则定义在 app/build.gradle.kts 的 applicationVariants 里；
+          # 这里再断言一次，避免哪天改名规则失效后 Release 上又出现 app-release.apk。
+          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -n 1)
+          EXPECTED="app/build/outputs/apk/release/Aivora-v${VERSION_NAME}.apk"
+          if [ ! -f "$EXPECTED" ]; then
+            echo "::error::产物命名不符合约定，期望 $EXPECTED"
+            ls -l app/build/outputs/apk/release/ || true
+            exit 1
+          fi
+          echo "产物命名正确：Aivora-v${VERSION_NAME}.apk"
 
       - name: 上传 APK（Artifacts，保留 90 天）
         uses: actions/upload-artifact@v4

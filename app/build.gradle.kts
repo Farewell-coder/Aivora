@@ -68,6 +68,17 @@ android {
     }
     buildFeatures { compose = true }
     packaging { resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*", "org/bouncycastle/pqc/**", "org/bouncycastle/x509/CertPathReviewerMessages*.properties") }
+
+    // 【产物命名】AGP 默认把 release 包命名为 app-release.apk，与历史发布版的
+    // Aivora-vX.Y.Z.apk 不一致：CI 直接上传后，Release 上的文件名就变成了 app-release.apk。
+    // 在这里统一定义命名规则，本地构建与 CI 走同一套，不再需要在 workflow 里手工改名。
+    // 前缀 Aivora-v、后缀 versionName，例如 Aivora-v0.0.7.apk。
+    applicationVariants.all {
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
+                "Aivora-v${versionName}.apk"
+        }
+    }
 }
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
