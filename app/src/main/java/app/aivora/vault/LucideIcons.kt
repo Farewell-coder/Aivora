@@ -18,6 +18,7 @@ import com.composables.icons.lucide.FileInput
 import com.composables.icons.lucide.FileOutput
 import com.composables.icons.lucide.Github
 import com.composables.icons.lucide.History
+import com.composables.icons.lucide.Info
 import com.composables.icons.lucide.KeyRound
 import com.composables.icons.lucide.Link2
 import com.composables.icons.lucide.List
