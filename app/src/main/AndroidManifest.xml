@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      【包可见性】Android 11+ 默认看不到其他应用，queryIntentActivities 会恒返回空列表。
+      深链导出必须靠它判断「目标软件是否已安装」，所以这里把已适配的 scheme 白名单登记出来。
+      新增接收方时，除了 AexDeepLink.RECEIVERS，也要在这里加一条 <package>/<data>。
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="dollhouse" android:host="aivora-import" />
+        </intent>
+    </queries>
+
+
     <application android:name=".AivoraApplication" android:label="@string/app_name" android:networkSecurityConfig="@xml/network_security_config" android:usesCleartextTraffic="true" android:theme="@style/Theme.Aivora" android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules" android:supportsRtl="true" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">
         <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>

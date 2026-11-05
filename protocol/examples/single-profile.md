@@ -7,11 +7,11 @@
 ```json
 {
   "format": "aivora.exchange/1",
-  "protocolVersion": "1.0",
+  "protocolVersion": "1.1",
   "exportedAt": "2026-11-01T09:00:00Z",
   "exporter": {
     "name": "Aivora",
-    "version": "0.1.0",
+    "version": "0.0.8",
     "platform": "android"
   },
   "profiles": [
@@ -21,8 +21,6 @@
       "provider": "deepseek",
       "baseUrl": "https://api.deepseek.com/v1",
       "apiKey": "sk-EXAMPLE-REPLACE-ME",
-      "models": ["deepseek-chat", "deepseek-reasoner"],
-      "defaultModel": "deepseek-chat",
       "description": "日常对话用",
       "extra": {
         "com.example.notes.pinned": true
@@ -35,7 +33,7 @@
 ## 要点
 
 - `profiles` 是数组，单个配置也要包成数组，不是对象。
-- `models` 顺序必须保留，导入方不得重排。
+- 1.1 起不再携带模型列表：接收方拿到 `baseUrl` 与 `apiKey` 后自行请求 `GET {baseUrl}/models`。
 - `apiKey` 在这里是明文，因为它位于**已加密**的 Payload 内部；文件本身是密文。
 - `extra` 的键必须带命名空间前缀（如 `com.example.notes.pinned`），避免第三方字段冲突。
 - 示例中的 `apiKey` 是占位值，任何公开文档都不得出现真实密钥。

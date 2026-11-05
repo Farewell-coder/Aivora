@@ -109,10 +109,12 @@ Release builds are signed with a fixed certificate, so they upgrade in place. A 
 
 ## AEX exchange protocol
 
-> **Status: AEX 1.0 is finalised and implemented since 0.0.5.**
+> **Status: AEX 1.1 is finalised and implemented since 0.0.8.**
 >
-> What is fixed is the **protocol's container layout and crypto parameters — not the app**. Aivora keeps shipping updates: new features, bug fixes and UI changes never invalidate an existing `.akcp` file and require no re-integration.
-> Configuration cards and multi-select both generate `.akcp` files, and both show the credential in a dialog first, then let you Export or Share.
+> What is fixed is the **protocol structure and crypto parameters — not the app**. Aivora keeps shipping updates: new features, bug fixes and UI changes never affect future integrations.
+> Configuration cards and multi-select generate `.akcp` files, and both show the credential in a dialog first, then let you Export or Share. Single configurations additionally offer a **Deeplink** button that hands the config to an already-integrated app as a plaintext link.
+>
+> **1.1 is a breaking change**: `profiles[]` no longer carries `models` / `defaultModel`, `protocolVersion` is `1.1` and matched exactly, so 1.0 containers are rejected by a 1.1 implementation. See the [protocol changelog](protocol/AEX-CHANGELOG.md).
 
 ### Purpose
 
@@ -216,7 +218,7 @@ See [Changelog](CHANGELOG.en.md).
 
 Aivora is distributed under **AGPL-3.0-only**. See [LICENSE](LICENSE).
 
-Versioning note: application and protocol versions **evolve independently**. Currently app 0.0.5 · AEX 1.0 (finalised).
+Versioning note: application and protocol versions **evolve independently**. Currently app 0.0.8 · AEX 1.1 (finalised).
 
-- **The protocol is finalised**: AEX 1.0's container layout, crypto parameters and field semantics are settled and will not change in minor revisions. Any change requires AEX 2.0, and 1.0 implementations will keep being supported.
-- **The app keeps moving**: features, UI, performance and bug fixes continue to ship in new Aivora releases without dragging the protocol along.
+- **Protocol version rules**: a major bump is always breaking; for a minor bump, Aivora matches the version **exactly**, i.e. `protocolVersion` must equal the single version the implementation supports. 1.1 removed the model-list fields, so 1.0 and 1.1 containers are not interchangeable.
+- **The app keeps moving**: features, UI, performance and bug fixes ship continuously without requiring a protocol change.

@@ -22,8 +22,17 @@ class AexTest {
         assertEquals(1, imported.size)
         assertEquals("单配置", imported[0].name)
         assertEquals("sk-EXAMPLE", imported[0].apiKey)
-        assertEquals(listOf("model-a", "model-b"), imported[0].models)
-        assertEquals("model-a", imported[0].defaultModel)
+        // AEX 1.1 起导出不再携带模型列表：接收方自己 GET {baseUrl}/models。
+        assertEquals(emptyList<String>(), imported[0].models)
+        assertEquals("", imported[0].defaultModel)
+    }
+
+    /** 1.1 的核心约定：导出的明文里根本不出现 models / defaultModel 这两个键。 */
+    @Test fun exportOmitsModelFields() {
+        val export = Aex.export(listOf(profile("无模型")), "0.0.8", credential)
+        val payload = Aex.import(export.bytes, export.credential).first()
+        assertEquals(emptyList<String>(), payload.models)
+        assertEquals("", payload.defaultModel)
     }
 
     @Test fun batchExportKeepsOrderAndCount() {
@@ -70,7 +79,16 @@ class AexTest {
     fun futureProtocolVersionIsRejected() {
         val export = Aex.export(listOf(profile("future")), "0.0.5", credential)
         val text = String(export.bytes, Charsets.ISO_8859_1)
-        val patched = text.replace("\"protocolVersion\":\"1.0\"", "\"protocolVersion\":\"2.0\"")
+        val patched = text.replace("\"protocolVersion\":\"1.1\"", "\"protocolVersion\":\"2.0\"")
+        Aex.import(patched.toByteArray(Charsets.ISO_8859_1), credential)
+    }
+
+    /** 版本校验是精确匹配：1.0 容器在 1.1 实现上必须被拒绝，不得"尽力兼容"。 */
+    @Test(expected = Aex.Failure.UnsupportedVersion::class)
+    fun previousProtocolVersionIsRejected() {
+        val export = Aex.export(listOf(profile("old")), "0.0.5", credential)
+        val text = String(export.bytes, Charsets.ISO_8859_1)
+        val patched = text.replace("\"protocolVersion\":\"1.1\"", "\"protocolVersion\":\"1.0\"")
         Aex.import(patched.toByteArray(Charsets.ISO_8859_1), credential)
     }
 
@@ -155,7 +173,8 @@ class AexTest {
         assertEquals("sk-EXAMPLE-NOT-REAL", one[0].apiKey)
         val many = Aex.import(multiple, "A".repeat(52))
         assertEquals(listOf("Alpha", "Beta", "Gamma"), many.map { it.name })
-        assertEquals(listOf("m2", "m3"), many[1].models)
+        // 1.1 起向量本身已不含模型字段，解析结果应为空。
+        assertEquals(emptyList<String>(), many[1].models)
     }
 
     @Test(expected = Aex.Failure.Authentication::class)

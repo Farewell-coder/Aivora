@@ -25,6 +25,7 @@ import app.aivora.vault.data.ServiceConfig
 import app.aivora.vault.data.ThirdParty
 import app.aivora.vault.data.VaultRepository
 import app.aivora.vault.protocol.Aex
+import app.aivora.vault.protocol.AexDeepLink
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -55,6 +56,11 @@ fun ConfigPage(
     var selecting by remember { mutableStateOf(false) }
     var picked by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var confirmBulkDelete by remember { mutableStateOf(false) }
+
+    // 深链接收方选择：非 null 表示正在选目标软件。
+    var deeplinkPicker by remember { mutableStateOf<List<AexDeepLink.Receiver>?>(null) }
+    // 待深链导出的配置（只有单条导出才会设置）。
+    var deeplinkSource by remember { mutableStateOf<ServiceConfig?>(null) }
 
     // 导入流程状态
     var importing by remember { mutableStateOf(false) }
@@ -222,10 +228,69 @@ fun ConfigPage(
                     targets.forEach { Text("· ${it.name}", fontSize = 12.sp) }
                 }
             },
+            // 深链只支持单条配置：批量导出时传 null，按钮不出现。
+            onDeeplink = if (single) {
+                {
+                    val installed = AexDeepLink.availableReceivers(context)
+                    if (installed.isEmpty()) {
+                        toast("暂无支持深链传递的软件")
+                    } else {
+                        deeplinkSource = targets.first()
+                        // 先关掉导出弹窗再弹选择框，避免两个对话框叠在一起。
+                        exporting = null
+                        deeplinkPicker = installed
+                    }
+                }
+            } else null,
             repo = repo,
             appVersion = appVersion,
             close = { exporting = null },
             toast = toast
+        )
+    }
+
+    // ---- 深链：选择目标软件（只列名称，无图标）
+    deeplinkPicker?.let { receivers ->
+        AlertDialog(
+            onDismissRequest = { deeplinkPicker = null },
+            title = { Text("选择接收软件") },
+            text = {
+                Column {
+                    Text(
+                        "配置将以明文链接交给所选软件，不加密、不需要凭证，也不会记入导出记录。",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    receivers.forEach { receiver ->
+                        Surface(
+                            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            TextButton(
+                                {
+                                    val source = deeplinkSource
+                                    deeplinkPicker = null
+                                    if (source == null) { toast("配置已不存在，请重新导出") }
+                                    else {
+                                        val profile = repo.toAex(source)
+                                        if (AexDeepLink.launch(context, profile, receiver, appVersion)) {
+                                            // 转后台：Aivora 的导出动作已经完成，不占着前台。
+                                            exporting = null
+                                            (context as? android.app.Activity)?.moveTaskToBack(true)
+                                        } else {
+                                            toast("暂无支持深链传递的软件")
+                                        }
+                                    }
+                                },
+                                Modifier.fillMaxWidth()
+                            ) { Text(receiver.displayName, maxLines = 1) }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton({ deeplinkPicker = null }) { Text("取消") } }
         )
     }
 

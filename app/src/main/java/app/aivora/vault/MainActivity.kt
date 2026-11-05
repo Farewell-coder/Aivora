@@ -299,12 +299,12 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 }
 @Composable fun AboutPage(protocol: () -> Unit) {
     val uri = LocalUriHandler.current
-    AppCard { Text("Aivora", fontSize = 25.sp, fontWeight = FontWeight.Bold); Text("本地 AI 配置管理工具\n版本 ${packageVersion(LocalContext.current)} · AEX 1.0\nAGPL-3.0-only\n数据仅保存在当前设备，不依赖云端账户。") }
+    AppCard { Text("Aivora", fontSize = 25.sp, fontWeight = FontWeight.Bold); Text("本地 AI 配置管理工具\n版本 ${packageVersion(LocalContext.current)} · AEX 1.1\nAGPL-3.0-only\n数据仅保存在当前设备，不依赖云端账户。") }
     AppCard { Text("开放生态", fontWeight = FontWeight.Bold); Spacer(Modifier.height(12.dp)); LabelButton(protocol, Lucide.File, "适配协议", Modifier.fillMaxWidth()); Spacer(Modifier.height(8.dp)); LabelButton({ uri.openUri("https://github.com/Farewell-coder/Aivora") }, Lucide.Github, "GitHub 项目", Modifier.fillMaxWidth()) }
     AppCard { Text("安全边界", fontWeight = FontWeight.Bold); Text("凭证用于加密导出文件。第三方成功解密后可接触明文 API Key；请仅向可信服务提交密钥。", fontSize = 12.sp) }
 }
 @Composable fun ProtocolPage() {
-    AppCard { Text("AEX 1.0", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text("Aivora Exchange Protocol 是开放的配置交换协议，版本与加密方案独立演进。") }
+    AppCard { Text("AEX 1.1", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text("Aivora Exchange Protocol 是开放的配置交换协议，版本与加密方案独立演进。") }
     AppCard { Text("文件与加密", fontWeight = FontWeight.Bold); Text("文件后缀：.akcp\n容器：8 字节 Magic + 4 字节头部长度 + UTF-8 JSON 头部 + 密文\n凭证：随机 256 位 Base32 字符串（52 字符，按 8 位分组）\n密钥派生：PBKDF2-HMAC-SHA256，600000 次迭代，16 字节随机 salt\n内容加密：AES-256-GCM，128 位认证标签，12 字节随机 nonce\n完整性：整个头部作为 AAD，篡改协议版本或加密参数会直接导致解密失败\n凭证不写入文件，仅用于派生密钥。") }
     AppCard { Text("导入与导出", fontWeight = FontWeight.Bold); Text("导出时可将单个或多个配置加密为 .akcp 文件；导入时选择文件并输入对应凭证。凭证错误、文件被修改或格式不支持时不会写入配置。\n\n导入同时支持第三方软件导出的明文配置（Chatbox、Continue、LobeChat、CC Switch、New API、Cherry Studio、.env），这些格式按其自身规则解析，无需凭证。\n\n全量备份使用独立的 .aivora-backup 格式，仅用于 Aivora 数据恢复，不与 AEX 配置交换文件混用。") }
 }

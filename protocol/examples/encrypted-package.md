@@ -19,7 +19,7 @@
 ```json
 {
   "format": "aivora.exchange/1",
-  "protocolVersion": "1.0",
+  "protocolVersion": "1.1",
   "kdf": "PBKDF2-HMAC-SHA256",
   "iterations": 600000,
   "salt": "AAECAwQFBgcICQoLDA0ODw==",

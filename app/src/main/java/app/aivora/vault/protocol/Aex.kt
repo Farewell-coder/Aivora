@@ -22,12 +22,16 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * AEX 1.0 (Aivora Exchange Protocol) codec.
+ * AEX 1.1 (Aivora Exchange Protocol) codec.
  *
  * Container: Magic(8) | uint32be headerLength | header JSON (UTF-8) | AES-256-GCM ciphertext+tag
  * Cipher  : AES-256-GCM, 128-bit tag, header is the AAD
  * KDF     : PBKDF2-HMAC-SHA256, 600000 iterations, 16-byte salt
  * Payload : JSON object with top-level profiles[]
+ *
+ * 1.1 变更：导出不再写入 `models` / `defaultModel`，接收方拿到 Base URL 与 API Key 后
+ * 自行请求 `GET {baseUrl}/models` 拉取模型列表。导入解析仍接受这两个字段（用于兼容
+ * 处理内部快照与未来的宽松实现），但 1.1 版本号精确匹配，1.0 容器会被拒绝。
  *
  * See protocol/AEX-SPECIFICATION.md for the normative description.
  */
@@ -37,7 +41,15 @@ object Aex {
     const val MAX_FILE_SIZE = 16 * 1024 * 1024
 
     private const val FORMAT = "aivora.exchange/1"
-    private const val PROTOCOL_VERSION = "1.0"
+
+    /**
+     * 协议版本。1.1 起导出不再包含模型列表。
+     *
+     * 版本校验采用**精确匹配**：这是刻意设计——1.x 之间的差异（本例为移除字段）
+     * 若被静默忽略，接收方会拿到缺失的模型信息却不自知。因此 1.0 容器在 1.1 实现上
+     * 会被判为 UNSUPPORTED_VERSION，必须显式升级或重新导出。
+     */
+    private const val PROTOCOL_VERSION = "1.1"
     private const val KDF = "PBKDF2-HMAC-SHA256"
     private const val CIPHER = "AES-256-GCM"
     private const val ITERATIONS = 600_000
@@ -275,8 +287,8 @@ object Aex {
                         if (p.provider.isNotEmpty()) put("provider", p.provider)
                         if (p.baseUrl.isNotEmpty()) put("baseUrl", p.baseUrl)
                         if (p.apiKey.isNotEmpty()) put("apiKey", p.apiKey)
-                        if (p.models.isNotEmpty()) putJsonArray("models") { p.models.forEach { add(it) } }
-                        if (p.defaultModel.isNotEmpty()) put("defaultModel", p.defaultModel)
+                        // AEX 1.1：不再导出 models / defaultModel。
+                        // 接收方拿到 baseUrl + apiKey 后自行请求 GET {baseUrl}/models 获取模型列表。
                         if (p.description.isNotEmpty()) put("description", p.description)
                         if (p.extra.isNotEmpty()) put("extra", p.extra)
                     }

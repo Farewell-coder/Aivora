@@ -10,7 +10,7 @@ ITER = 600000
 def build(payload_obj, salt=SALT, nonce=NONCE):
     plain = json.dumps(payload_obj, separators=(',',':'), ensure_ascii=False).encode()
     header = {
-        "format":"aivora.exchange/1", "protocolVersion":"1.0",
+        "format":"aivora.exchange/1", "protocolVersion":"1.1",
         "kdf":"PBKDF2-HMAC-SHA256", "iterations":ITER,
         "salt": base64.b64encode(salt).decode(),
         "cipher":"AES-256-GCM",
@@ -26,28 +26,28 @@ def build(payload_obj, salt=SALT, nonce=NONCE):
 
 def single():
     return {
-      "format":"aivora.exchange/1", "protocolVersion":"1.0",
+      "format":"aivora.exchange/1", "protocolVersion":"1.1",
       "exportedAt":"2026-11-01T00:00:00Z",
-      "exporter":{"name":"Aivora","version":"0.0.5","platform":"android"},
+      "exporter":{"name":"Aivora","version":"0.0.8","platform":"android"},
       "profiles":[{
         "id":"vector-single","name":"Synthetic Vector",
         "provider":"custom","baseUrl":"https://example.invalid/v1",
         "apiKey":"sk-EXAMPLE-NOT-REAL",
-        "models":["model-a","model-b"],"defaultModel":"model-a",
+        
         "description":"synthetic test vector"
       }]
     }
 
 def multi():
     return {
-      "format":"aivora.exchange/1", "protocolVersion":"1.0",
+      "format":"aivora.exchange/1", "protocolVersion":"1.1",
       "exportedAt":"2026-11-01T00:00:00Z",
-      "exporter":{"name":"Aivora","version":"0.0.5","platform":"android"},
+      "exporter":{"name":"Aivora","version":"0.0.8","platform":"android"},
       "profiles":[
         {"id":"vector-a","name":"Alpha","provider":"custom","baseUrl":"https://example.invalid/v1",
-         "apiKey":"sk-EXAMPLE-A","models":["m1"],"defaultModel":"m1"},
+         "apiKey":"sk-EXAMPLE-A"},
         {"id":"vector-b","name":"Beta","provider":"custom","baseUrl":"https://example.invalid/v1",
-         "apiKey":"sk-EXAMPLE-B","models":["m2","m3"]},
+         "apiKey":"sk-EXAMPLE-B"},
         {"id":"vector-c","name":"Gamma","provider":"custom"}
       ]
     }

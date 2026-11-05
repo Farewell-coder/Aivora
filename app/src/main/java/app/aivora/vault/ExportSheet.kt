@@ -33,6 +33,10 @@ import kotlinx.coroutines.withContext
  *
  * 之前批量导出直接调 `shareProfiles()` 弹分享面板、不显示凭证，用户拿不到密钥，
  * 这个函数取代了那条路径。
+ *
+ * 【深链按钮】[onDeeplink] 非 null 才显示，且只在单条导出时传入（批量模式下传 null）。
+ * 它被刻意放在「复制凭证」与「导出/分享」之间独立成行：深链是「发链接」，
+ * 底下两颗是「发文件」，两套模型混在一行会让人以为深链也是加密文件。
  */
 @Composable
 fun ExportSheet(
@@ -41,6 +45,8 @@ fun ExportSheet(
     profiles: List<Aex.Profile>,
     existingCredential: String? = null,
     header: (@Composable () -> Unit)? = null,
+    /** 非 null 时显示「深链」按钮；仅单条导出传入。 */
+    onDeeplink: (() -> Unit)? = null,
     repo: VaultRepository,
     appVersion: String,
     close: () -> Unit,
@@ -151,6 +157,16 @@ fun ExportSheet(
                     },
                     Lucide.Copy, "复制凭证"
                 )
+                // 深链：只发链接、不加密、不写记录。单独一行，与下面的「发文件」区分开。
+                if (onDeeplink != null) {
+                    Spacer(Modifier.height(8.dp))
+                    LabelButton(
+                        { if (!working && ready) onDeeplink() },
+                        Lucide.Link, "深链",
+                        Modifier.fillMaxWidth(),
+                        enabled = ready && !working
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     // 导出：写入用户自选位置

@@ -1,6 +1,6 @@
 # AEX Test Vectors
 
-> 状态：1.0 已定稿并实现。官方向量文件已提供在 [test-vectors/](test-vectors/README.md)，由独立的 Python 实现生成并已被 Kotlin 实现成功解密。
+> 状态：1.1 已定稿并实现。官方向量文件已提供在 [test-vectors/](test-vectors/README.md)，由独立的 Python 实现生成并已被 Kotlin 实现成功解密。
 
 ## 1. 原则
 

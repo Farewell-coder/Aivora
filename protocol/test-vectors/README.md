@@ -1,13 +1,13 @@
 # AEX 官方测试向量
 
-本目录的 `.akcp` 文件由**独立的 Python 参考实现**生成，用于第三方验证自己的解密实现是否符合 AEX 1.0。
+本目录的 `.akcp` 文件由**独立的 Python 参考实现**生成，用于第三方验证自己的解密实现是否符合 **AEX 1.1**。
 
 ## 文件清单
 
 | 文件 | 内容 | 大小 | SHA-256 |
 |---|---|---:|---|
-| `single.akcp` | 单个配置，字段齐全 | 679 字节 | `b8cb82c5ea37c27f8d6a7f3078200908dfcf85a5e3dafb92bc0ac0ac09e226a5` |
-| `multiple.akcp` | 三个配置，含缺省字段的条目 | 787 字节 | `b6eec5289a2f18973f7c862399a9a99627841e5457d9687892bed53ea1b9662f` |
+| `single.akcp` | 单个配置，字段齐全 | 623 字节 | `7305ea15ed79d30a65e9075c38a63af81f1ed991ba12e2db618a40526e725f67` |
+| `multiple.akcp` | 三个配置，含缺省字段的条目 | 730 字节 | `a63d832ea72a12768294897002bc17e9826889c3a7533a3b9988f89d10fd8b28` |
 
 ## 解密参数
 
@@ -30,9 +30,9 @@
 ```json
 {
   "format": "aivora.exchange/1",
-  "protocolVersion": "1.0",
+  "protocolVersion": "1.1",
   "exportedAt": "2026-11-01T00:00:00Z",
-  "exporter": { "name": "Aivora", "version": "0.0.5", "platform": "android" },
+  "exporter": { "name": "Aivora", "version": "0.0.8", "platform": "android" },
   "profiles": [
     {
       "id": "vector-single",
@@ -40,17 +40,17 @@
       "provider": "custom",
       "baseUrl": "https://example.invalid/v1",
       "apiKey": "sk-EXAMPLE-NOT-REAL",
-      "models": ["model-a", "model-b"],
-      "defaultModel": "model-a",
       "description": "synthetic test vector"
     }
   ]
 }
 ```
 
+> 注意：**没有 `models` / `defaultModel`**。这是 1.1 的核心变化。你的实现应当能正常解析这份 JSON，并且自己去请求 `/models` 获取模型清单。
+
 ### `multiple.akcp`
 
-三个配置，名称依次为 `Alpha`、`Beta`、`Gamma`。`Gamma` 只有 `id`、`name`、`provider`，用于验证缺省字段语义。`Beta` 的 `models` 为 `["m2","m3"]`，顺序必须保留。
+三个配置，名称依次为 `Alpha`、`Beta`、`Gamma`。`Gamma` 只有 `id`、`name`、`provider`，用于验证缺省字段语义。
 
 ## 负向用例
 
@@ -60,8 +60,9 @@
 |---|---|
 | 凭证改为 `BBBB…`（52 个 B） | 认证失败 |
 | 密文最后一个字节取反 | 认证失败 |
-| 头部 `iterations` 改为 600001 | 认证失败（header 是 AAD） |
-| 头部 `protocolVersion` 改为 `2.0` | 不支持的版本（参数校验先于解密） |
+| 头部 `iterations` 改为 600001 | 不支持参数（先于解密校验） |
+| 头部 `protocolVersion` 改为 `2.0` | 不支持的版本 |
+| 头部 `protocolVersion` 改为 `1.0` | 不支持的版本（1.1 实现精确匹配） |
 | 文件截断 32 字节 | 头部/长度校验失败 |
 | 首字节改成 `0x00` | 非法 Magic |
 
@@ -75,7 +76,11 @@ python3 scripts/gen_vectors.py
 
 ## Aivora 自身的验证
 
-Kotlin 实现的 `AexTest.decryptsPythonGeneratedVectors` 会读取本目录的两个文件并解密，断言字段内容正确；`pythonVectorRejectedWithWrongCredential` 断言错误凭证被拒绝。这两项测试在每次构建时运行，是真实的跨语言互操作证据，而非仅文档声明。
+Kotlin 实现的 `AexTest.decryptsPythonGeneratedVectors` 会读取本目录的两个文件并解密，断言字段内容正确；`pythonVectorRejectedWithWrongCredential` 断言错误凭证被拒绝；`previousProtocolVersionIsRejected` 断言 1.0 容器被拒。这些测试在每次构建时运行，是真实的跨语言互操作证据，而非仅文档声明。
+
+## 深链测试
+
+深链（明文链接）不走加密流程，没有对应的二进制向量。测试方法见 [AEX-DEEPLINK §6](../AEX-DEEPLINK.md#6-联调方法)，其中包括 adb 模拟命令与必测用例表。
 
 ## 注意
 

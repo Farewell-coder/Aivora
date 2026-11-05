@@ -14,9 +14,9 @@ android {
         applicationId = "app.aivora.vault"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
+        versionCode = 8
         ndk { abiFilters += "arm64-v8a" }
-        versionName = "0.0.7"
+        versionName = "0.0.8"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     // 【签名配置】读 keystore.properties（不入版本库，见 .gitignore）。
@@ -72,7 +72,7 @@ android {
     // 【产物命名】AGP 默认把 release 包命名为 app-release.apk，与历史发布版的
     // Aivora-vX.Y.Z.apk 不一致：CI 直接上传后，Release 上的文件名就变成了 app-release.apk。
     // 在这里统一定义命名规则，本地构建与 CI 走同一套，不再需要在 workflow 里手工改名。
-    // 前缀 Aivora-v、后缀 versionName，例如 Aivora-v0.0.7.apk。
+    // 前缀 Aivora-v、后缀 versionName，例如 Aivora-v0.0.8.apk。
     applicationVariants.all {
         outputs.all {
             (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =

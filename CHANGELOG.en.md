@@ -6,6 +6,36 @@ What each release added, changed and fixed is recorded here, so the README does 
 
 ---
 
+## v0.0.8 · Deeplink export and AEX 1.1
+
+This release adds a second way to hand a configuration to another app, and bumps the protocol to 1.1. **The protocol change is breaking**: 1.0 `.akcp` files cannot be imported on 0.0.8, and vice versa.
+
+### New: Deeplink export
+
+The export dialog gains a **Deeplink** button, shown only for single-configuration exports.
+
+- Tapping it checks whether any registered receiver is installed; if not, it shows "no app supports deeplink transfer"
+- Otherwise a plain name list appears; picking one opens that app and Aivora moves to the background
+- Not encrypted, no credential, no export record, never copied to the clipboard
+
+Dollhouse is supported first. Integration guide: `protocol/AEX-DEEPLINK.md`.
+
+### Changed: AEX 1.1 no longer exports the model list
+
+Neither `.akcp` nor deeplinks carry `models` / `defaultModel` any more. Receivers fetch `GET {baseUrl}/models` themselves.
+
+Reason: model catalogues change constantly, so the snapshot taken at export time goes stale quickly; and naming differs across apps, so copying it over creates dirty data.
+
+### Breaking-change notice
+
+Version matching is exact. After upgrading to 0.0.8, previously exported 1.0 files are rejected with "this file was created by a newer version, please upgrade the app" and must be re-exported.
+
+### Docs
+
+New `protocol/AEX-DEEPLINK.md` (full deeplink integration guide); adapter guide, specification, schema, security doc, ecosystem page and test vectors all updated to 1.1.
+
+---
+
 ## v0.0.7 · Transparent system bars, new icon
 
 This release is purely visual plus system-bar handling. No functional or data-structure changes — configs, export history and backups are untouched.

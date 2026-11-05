@@ -1,6 +1,6 @@
-# AEX 1.0 Specification
+# AEX 1.1 Specification
 
-> **状态：1.0 已定稿，Aivora 0.0.5 起实现。** 后续不兼容变更需升主版本。
+> **状态：1.1 已定稿，Aivora 0.0.8 起实现。** 1.1 移除 profiles 中的模型列表字段，其余与 1.0 相同。
 > 关键词 MUST / SHOULD / MAY 按 RFC 2119 解释。
 
 ## 1. 概述
@@ -9,7 +9,7 @@ AEX（Aivora Exchange Protocol）是跨软件 AI API 配置交换协议，规范
 
 - 正式名称：Aivora Exchange Protocol
 - 简称：AEX
-- 版本：1.0
+- 版本：1.1
 - 文件扩展名：`.akcp`
 - MIME Type：`application/vnd.aivora.akcp`
 - 字符编码：UTF-8
@@ -41,7 +41,7 @@ JSON 是 `.akcp` 文件内部的序列化方式，**不是第二种导出格式*
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `format` | string | 是 | 固定 `"aivora.exchange/1"` |
-| `protocolVersion` | string | 是 | `"1.0"` |
+| `protocolVersion` | string | 是 | `"1.1"` |
 | `kdf` | string | 是 | 固定 `"PBKDF2-HMAC-SHA256"` |
 | `iterations` | integer | 是 | 600000，合法范围 100000–2000000 |
 | `salt` | string | 是 | 16 字节随机值的 Base64（标准字母表，带 `=` 填充） |
@@ -83,7 +83,7 @@ Root 对象：
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `format` | string | 是 | `"aivora.exchange/1"`，与头部一致，二次校验 |
-| `protocolVersion` | string | 是 | `"1.0"` |
+| `protocolVersion` | string | 是 | `"1.1"`，与头部完全一致 |
 | `exportedAt` | string | 是 | RFC 3339 UTC 时间，如 `2026-11-01T09:00:00Z` |
 | `exporter` | object | 是 | 导出方信息，见下 |
 | `profiles` | array | 是 | 配置数组，长度 ≥ 1 |
@@ -105,10 +105,12 @@ Root 对象：
 | `provider` | string | 否 | 服务商标识，如 `"openai"`、`"deepseek"`、`"custom"` |
 | `baseUrl` | string | 否 | Endpoint，缺失时语义为"未设置" |
 | `apiKey` | string | 否 | 明文密钥，缺失时语义为"未设置" |
-| `models` | array\<string\> | 否 | 模型列表，**必须保持原有顺序** |
-| `defaultModel` | string | 否 | 默认模型名 |
 | `description` | string | 否 | 备注 |
 | `extra` | object | 否 | 扩展数据，键名必须带命名空间 |
+
+> **1.1 起不再携带模型列表。** 1.0 曾定义 `models` 与 `defaultModel`，实践中发现两个问题：一是模型清单随时会变，快照出来很快就过期；二是不同软件的模型命名与分组规则不同，直接搬过去反而制造脏数据。1.1 改为接收方拿到 `baseUrl` + `apiKey` 后自行请求 `GET {baseUrl}/models` 现取现用，失败则留空让用户手动添加，不阻断导入。
+>
+> 接收方仍应**容忍**这两个字段存在（旧实现可能写入），读到就忽略，不要报错。
 
 ### 4.1 字段语义规则
 
@@ -142,7 +144,9 @@ Root 对象：
 ## 6. 版本规则
 
 - 主版本（`1`）变化表示不兼容变更。读取方遇到更高主版本 MUST 拒绝并提示"文件由更新版本生成"，**不得降级猜测或尝试兼容解析**。
-- 次版本（`1.0` → `1.1`）变化表示向后兼容的增量扩展，读取方可忽略未知字段继续处理。
+- 次版本（`1.0` → `1.1`）在 1.0 时被定义为"向后兼容的增量扩展"，但 **Aivora 的实现采用精确匹配**：`protocolVersion` 必须等于实现支持的版本，`1.0` 容器在 1.1 实现上会被判为 `UNSUPPORTED_VERSION`。
+- 这样做的理由是：1.1 移除了 `profiles[].models` / `defaultModel`。若读取方静默忽略版本差异，1.0 与 1.1 的文件会被同等对待，接收方无法判断"模型字段缺失"是协议本意还是文件损坏。宁可明确报错要求升级，也不要给出看似成功、实则信息不完整的导入结果。
+- **对第三方的建议**：若你的实现同时支持 1.0 与 1.1，自行决定是否按次版本放行；若只支持 1.1，请照 Aivora 的做法精确匹配，并在错误提示里写明"该文件由旧/新版本生成"。
 - 错误码与兼容等级见 [AEX-ADAPTER-GUIDE](AEX-ADAPTER-GUIDE.md#错误码)。
 
 ## 7. 格式识别
