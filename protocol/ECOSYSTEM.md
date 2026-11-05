@@ -21,7 +21,7 @@
 
 > 「通道」一列填 `文件` / `深链` / `文件+深链`。深链需要在 Aivora 的接收方注册表中登记 scheme 与 host，才会出现在应用的软件选择列表里。Dollhouse 的登记为 `dollhouse://aivora-import`。
 >
-> **Dollhouse 补充说明**：文件通道兼容等级 **2**（`extra` 可读但当前不落库，预览会提示）；未知字段保留在解析模型中；冲突处理支持跳过 / 覆盖 / 另存副本。官方 1.1 测试向量已纳入其单测，深链覆盖 `AEX-DEEPLINK.md` §6 的必测用例。因尚未经 Aivora 团队独立复核，状态标为「自行声明」。
+> **Dollhouse 补充说明**：文件通道兼容等级 **2**（`extra` 可读但当前不落库，预览会提示）；未知字段保留在解析模型中；冲突处理支持跳过 / 覆盖 / 另存副本。官方 1.1 测试向量已纳入其单测，深链覆盖 `AEX-DEEPLINK.md` §6 的必测用例。Dollhouse 0.2.2 已发布：<https://github.com/Farewell-coder/Dollhouse/releases/tag/v0.2.2>。因尚未经 Aivora 团队独立复核，状态标为「自行声明」。
 
 ## 提交适配信息
 

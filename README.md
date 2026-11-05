@@ -95,10 +95,10 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 
 ### 最新版本
 
-当前发布版本：**0.0.7**
+当前发布版本：**0.0.9**
 
 - 下载页面：[github.com/Farewell-coder/Aivora/releases/latest](https://github.com/Farewell-coder/Aivora/releases/latest)
-- 安装包命名：`Aivora-v0.0.7.apk`
+- 安装包命名：`Aivora-v0.0.9.apk`
 
 ### 安装说明
 
