@@ -8,6 +8,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.stickyHeader
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -57,6 +61,7 @@ fun RecordsPage(
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
+    val haptics = rememberHaptics()
 
     var selecting by remember { mutableStateOf(false) }
     var picked by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -64,106 +69,150 @@ fun RecordsPage(
     var confirmDelete by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
 
-    // 顶部：总数 + 选择入口
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("共 ${records.size} 条导出记录", modifier = Modifier.weight(1f), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (records.isNotEmpty()) {
-            LabelButton(
-                { selecting = !selecting; if (!selecting) picked = emptySet() },
-                Lucide.Check,
-                if (selecting) "取消" else "选择"
-            )
-        }
-    }
-    Spacer(Modifier.height(12.dp))
-
-    if (records.isEmpty()) {
-        AppCard { Empty("还没有导出记录，导出一次配置后会出现在这里") }
-        return
-    }
-
-    // 按日期分组
+    // 分组数据必须在 LazyColumn 之外算好：LazyListScope 的 content 不是 @Composable，
+    // 在里面调用 remember 会直接编译失败。
     val df = remember { DateFormat.getDateInstance(DateFormat.MEDIUM) }
     val grouped = records.groupBy { df.format(Date(it.exportedAt)) }
 
-    grouped.forEach { (day, items) ->
-        Text(
-            day,
-            Modifier.padding(start = 4.dp, top = 6.dp, bottom = 6.dp),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        items.forEach { record ->
-            val names = remember(record.id, record.configNames) { parseNames(record.configNames) }
-            val missing = remember(record.id, names, configs) {
-                // 「原配置已删除」判定：名称在当前配置里找不到。
-                if (names.isEmpty()) false else names.all { n -> configs.none { it.name == n } }
+    // 顶部：总数 + 选择入口
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = Tokens.PagePadding,
+            end = Tokens.PagePadding,
+            top = 4.dp,
+            bottom = Tokens.NavSpace,
+        ),
+    ) {
+        item {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("共 ${records.size} 条导出记录", modifier = Modifier.weight(1f), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (records.isNotEmpty()) {
+                    LabelButton(
+                        { selecting = !selecting; if (!selecting) picked = emptySet() },
+                        Lucide.Check,
+                        if (selecting) "取消" else "选择"
+                    )
+                }
             }
-            AppCard {
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                        .combinedClickable(
-                            onClick = { if (selecting) picked = picked.toggle(record.id) else detail = record },
-                            onLongClick = { selecting = true; picked = picked + record.id }
-                        ),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (selecting) {
-                        Checkbox(record.id in picked, { on -> picked = if (on) picked + record.id else picked - record.id })
-                        Spacer(Modifier.width(4.dp))
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            record.fileName,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(Modifier.height(3.dp))
-                        Text(
-                            "${record.configCount} 个配置 · ${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.exportedAt))}",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (names.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+        }
+
+        if (records.isEmpty()) {
+            item {
+                AppCard {
+                    EmptyState(
+                        icon = Lucide.History,
+                        title = "还没有导出记录",
+                        hint = "导出一次配置后，记录会出现在这里",
+                    )
+                }
+            }
+        }
+
+        grouped.forEach { (day, dayItems) ->
+            stickyHeader {
+                Text(
+                    day,
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(start = 4.dp, top = 10.dp, bottom = 6.dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            items(dayItems, key = { it.id }) { record ->
+                val names = remember(record.id, record.configNames) { parseNames(record.configNames) }
+                val missing = remember(record.id, names, configs) {
+                    // 「原配置已删除」判定：名称在当前配置里找不到。
+                    if (names.isEmpty()) false else names.all { n -> configs.none { it.name == n } }
+                }
+                val isPicked = record.id in picked
+                AppCard(variant = if (selecting && isPicked) CardVariant.Outlined else CardVariant.Muted) {
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                            .combinedClickable(
+                                onClick = { if (selecting) picked = picked.toggle(record.id) else detail = record },
+                                onLongClick = {
+                                    haptics.toggle()
+                                    selecting = true
+                                    picked = picked + record.id
+                                }
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (selecting) {
+                            Checkbox(record.id in picked, { on -> picked = if (on) picked + record.id else picked - record.id })
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Column(Modifier.weight(1f)) {
                             Text(
-                                names.joinToString("、"),
-                                fontSize = 11.sp,
+                                record.fileName,
+                                fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                "${record.configCount} 个配置 · ${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.exportedAt))}",
+                                fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            if (names.isNotEmpty()) {
+                                Text(
+                                    names.joinToString("、"),
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (missing) {
+                                Text("原配置已删除", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .7f))
+                            }
                         }
-                        if (missing) {
-                            Text("原配置已删除", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .7f))
-                        }
+                        if (!selecting) Icon(Lucide.ChevronRight, null, Modifier.size(19.dp))
                     }
-                    if (!selecting) Icon(Lucide.ChevronRight, null, Modifier.size(19.dp))
+                }
+            }
+        }
+
+        // 选择模式底部操作栏
+        if (selecting) {
+            item {
+                AppCard(variant = CardVariant.Outlined) {
+                    val allPicked = records.isNotEmpty() && records.all { it.id in picked }
+                    val somePicked = !allPicked && records.any { it.id in picked }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TriStateCheckbox(
+                            state = when {
+                                allPicked -> ToggleableState.On
+                                somePicked -> ToggleableState.Indeterminate
+                                else -> ToggleableState.Off
+                            },
+                            onClick = {
+                                picked = if (allPicked) picked - records.map { it.id }.toSet()
+                                else picked + records.map { it.id }.toSet()
+                            },
+                        )
+                        Text("已选 ${picked.size} / ${records.size} 条", Modifier.weight(1f), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TextButton({ picked = emptySet() }) { Text("清空") }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        { confirmDelete = true },
+                        Modifier.fillMaxWidth(),
+                        enabled = picked.isNotEmpty(),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .7f)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) { Icon(Lucide.Trash, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("删除所选") }
                 }
             }
         }
     }
 
-    // 选择模式底部操作栏
-    if (selecting) {
-        AppCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("已选 ${picked.size} / ${records.size} 条", Modifier.weight(1f), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton({ picked = if (picked.size == records.size) emptySet() else records.map { it.id }.toSet() }) {
-                    Text(if (picked.size == records.size) "取消全选" else "全选")
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                { confirmDelete = true },
-                Modifier.fillMaxWidth(),
-                enabled = picked.isNotEmpty(),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .7f)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) { Icon(Lucide.Trash, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("删除所选") }
-        }
-    }
 
     if (confirmDelete) {
         AlertDialog(

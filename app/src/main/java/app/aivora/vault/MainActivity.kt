@@ -17,7 +17,17 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,13 +102,80 @@ private fun resolveDark(prefs: android.content.SharedPreferences): Boolean {
  * 必须在 setContent 内部调用，才能随主题变化重新执行；而在 Activity 的
  * onCreate 里设一次会在切换主题后失效，这正是顶部图标看不清的原因。
  */
+/**
+ * 视觉 token。
+ *
+ * 之前圆角和配色只在主题里粗放地给了两个值，各页面又各自写 12/13/14/20/28dp 的圆角、
+ * 各自挑灰字颜色。这里把层级收敛成三种形状与一组间距常量，新代码只从这里取值。
+ */
+object Tokens {
+    val CardShape = RoundedCornerShape(20.dp)
+    val InnerShape = RoundedCornerShape(14.dp)
+    val PillShape = RoundedCornerShape(24.dp)
+
+    val GapXs = 4.dp
+    val GapS = 8.dp
+    val GapM = 12.dp
+    val GapL = 16.dp
+    val PagePadding = 20.dp
+
+    /** 底部悬浮导航占用的空间，列表底部要留出来。 */
+    val NavSpace = 132.dp
+}
+
+/** 浅色方案：补齐 surfaceContainer 层级，卡片不再靠边框区分。 */
+private val LightScheme = lightColorScheme(
+    primary = Brand,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFEADDFF),
+    onPrimaryContainer = Color(0xFF21005D),
+    secondary = Color(0xFF625B71),
+    secondaryContainer = Color(0xFFE8DEF8),
+    onSecondaryContainer = Color(0xFF1D192B),
+    background = Color(0xFFFBF8FD),
+    onBackground = Color(0xFF1C1B1F),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF1C1B1F),
+    surfaceVariant = Color(0xFFE7E0EC),
+    onSurfaceVariant = Color(0xFF49454F),
+    outline = Color(0xFF79747E),
+    outlineVariant = Color(0xFFE2DCEC),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF5F2FA),
+    surfaceContainer = Color(0xFFEFEBF5),
+    surfaceContainerHigh = Color(0xFFE9E4F0),
+    surfaceContainerHighest = Color(0xFFE3DEEA),
+    error = Color(0xFFB3261E),
+)
+
+/** 深色方案：补齐容器层级，避免深色下所有块糊成一片。 */
+private val DarkScheme = darkColorScheme(
+    primary = Color(0xFFD0BCFF),
+    onPrimary = Color(0xFF381E72),
+    primaryContainer = Color(0xFF4F378B),
+    onPrimaryContainer = Color(0xFFEADDFF),
+    secondary = Color(0xFFCCC2DC),
+    secondaryContainer = Color(0xFF4A4458),
+    onSecondaryContainer = Color(0xFFE8DEF8),
+    background = Color(0xFF141218),
+    onBackground = Color(0xFFE6E0E9),
+    surface = Color(0xFF1D1B20),
+    onSurface = Color(0xFFE6E0E9),
+    surfaceVariant = Color(0xFF49454F),
+    onSurfaceVariant = Color(0xFFCAC4D0),
+    outline = Color(0xFF938F99),
+    outlineVariant = Color(0xFF3B3742),
+    surfaceContainerLowest = Color(0xFF0F0D13),
+    surfaceContainerLow = Color(0xFF211F26),
+    surfaceContainer = Color(0xFF2B2930),
+    surfaceContainerHigh = Color(0xFF36343B),
+    surfaceContainerHighest = Color(0xFF3F3C45),
+    error = Color(0xFFF2B8B5),
+)
+
 @Composable
 fun AivoraTheme(dark: Boolean, content: @Composable () -> Unit) {
-    val scheme = if (dark) {
-        darkColorScheme(primary = Color(0xFFD0BCFF), primaryContainer = Color(0xFF4F378B))
-    } else {
-        lightColorScheme(primary = Brand, background = Color(0xFFFEF7FF), surface = Color.White)
-    }
+    val scheme = if (dark) DarkScheme else LightScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -109,7 +186,15 @@ fun AivoraTheme(dark: Boolean, content: @Composable () -> Unit) {
             }
         }
     }
-    MaterialTheme(scheme, shapes = Shapes(medium = RoundedCornerShape(20.dp), large = RoundedCornerShape(28.dp)), content = content)
+    MaterialTheme(
+        colorScheme = scheme,
+        shapes = Shapes(
+            small = Tokens.InnerShape,
+            medium = Tokens.CardShape,
+            large = RoundedCornerShape(28.dp),
+        ),
+        content = content,
+    )
 }
 private fun authenticate(activity: FragmentActivity, done: (Boolean) -> Unit) {
     val prompt = BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), object : BiometricPrompt.AuthenticationCallback() {
@@ -156,20 +241,26 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
         Box(Modifier.fillMaxSize().background(Color.Transparent)) {
             // 背景延伸到状态栏后面，页面内容则按 insets 让位，避免被时间/电量图标压住。
             Scaffold(containerColor = Color.Transparent, snackbarHost = { SnackbarHost(snack) }) { pad ->
-                Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+                Column(Modifier.padding(pad).fillMaxSize()) {
                     // edge-to-edge 下 Scaffold 不吃状态栏 inset，这里显式让位：
                     // 背景仍延伸到状态栏后面，只把内容往下推，避免被时间/电量图标压住。
                     Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-                    Spacer(Modifier.height(20.dp)); PageHeader(page) { page = if (page == Page.Protocol) Page.About else if (page == Page.About) Page.Settings else Page.Configs }
-                    when (page) {
-                        Page.Configs -> ConfigPage(configs, repo, packageVersion(LocalContext.current), endpointFix, { editing = it; showEditor = true }, { editing = null; showEditor = true }, { page = it }) { message = it }
-                        Page.Diagnostics -> DiagnosticsPage(configs, repo, packageVersion(LocalContext.current)) { message = it }
-                        Page.Records -> RecordsPage(records, configs, repo, packageVersion(LocalContext.current)) { message = it }
-                        Page.Settings -> SettingsPage(repo, prefs, themeMode, { themeMode = it; prefs.edit().putString("theme", it.name).apply() }, locked, ::changeLock, endpointFix, { endpointFix = it; prefs.edit().putBoolean("endpointFix", it).apply() }, { page = Page.About }) { message = it }
-                        Page.About -> AboutPage { page = Page.Protocol }
-                        Page.Protocol -> ProtocolPage()
+                    // 标题栏固定：之前它跟着内容一起滚走，长列表里切页会失去方位感。
+                    Column(Modifier.padding(horizontal = Tokens.PagePadding)) {
+                        Spacer(Modifier.height(20.dp))
+                        PageHeader(page) { page = if (page == Page.Protocol) Page.About else if (page == Page.About) Page.Settings else Page.Configs }
                     }
-                    Spacer(Modifier.height(if (page in listOf(Page.Configs, Page.Diagnostics, Page.Records, Page.Settings)) 124.dp else 36.dp))
+                    // 页面内容自己滚动；切换时以底部为圆心扩散铺开，避免硬切。
+                    CircularRevealBox(revealKey = page, modifier = Modifier.weight(1f)) {
+                        when (page) {
+                            Page.Configs -> ConfigPage(configs, repo, packageVersion(LocalContext.current), endpointFix, { editing = it; showEditor = true }, { editing = null; showEditor = true }, { page = it }) { message = it }
+                            Page.Diagnostics -> ScrollPage { DiagnosticsPage(configs, repo, packageVersion(LocalContext.current)) { message = it } }
+                            Page.Records -> RecordsPage(records, configs, repo, packageVersion(LocalContext.current)) { message = it }
+                            Page.Settings -> ScrollPage { SettingsPage(repo, prefs, themeMode, { themeMode = it; prefs.edit().putString("theme", it.name).apply() }, locked, ::changeLock, endpointFix, { endpointFix = it; prefs.edit().putBoolean("endpointFix", it).apply() }, { page = Page.About }) { message = it } }
+                            Page.About -> ScrollPage(bottomSpace = 36.dp) { AboutPage { page = Page.Protocol } }
+                            Page.Protocol -> ScrollPage(bottomSpace = 36.dp) { ProtocolPage() }
+                        }
+                    }
                 }
             }
             if (page in listOf(Page.Configs, Page.Diagnostics, Page.Records, Page.Settings)) FloatingNav(page, Modifier.align(Alignment.BottomCenter)) { page = it }
@@ -184,6 +275,23 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
         Text(page.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
     }; Spacer(Modifier.height(18.dp))
 }
+/** 非列表页的滚动容器：统一页边距，并在底部留出悬浮导航的空间。 */
+@Composable
+private fun ScrollPage(
+    bottomSpace: Dp = Tokens.NavSpace,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = Tokens.PagePadding)
+    ) {
+        content()
+        Spacer(Modifier.height(bottomSpace))
+    }
+}
+
 @Composable private fun FloatingNav(selected: Page, modifier: Modifier = Modifier, select: (Page) -> Unit) {
     Column(modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().height(30.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.background.copy(alpha = .58f)))))
@@ -197,18 +305,100 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
             Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.SpaceAround) {
                 listOf(Page.Configs to Lucide.List, Page.Diagnostics to Lucide.Activity, Page.Records to Lucide.History, Page.Settings to Lucide.Settings).forEach { (p, icon) ->
                     val active = selected == p
-                    Column(Modifier.clip(RoundedCornerShape(20.dp)).background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = .12f) else Color.Transparent).clickable { select(p) }.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(icon, p.title, Modifier.size(22.dp), tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    // 底色过渡而不是硬切，切换时能看出「从哪个走到哪个」。
+                    val pill by animateColorAsState(
+                        targetValue = if (active) MaterialTheme.colorScheme.primary.copy(alpha = .14f) else Color.Transparent,
+                        animationSpec = tween(200),
+                        label = "navPill",
+                    )
+                    val tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    Column(
+                        Modifier
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(pill)
+                            .tappable(
+                                onClick = { if (!active) select(p) },
+                                shape = RoundedCornerShape(18.dp),
+                                haptic = true,
+                            )
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(icon, p.title, Modifier.size(22.dp), tint = tint)
                         Spacer(Modifier.height(3.dp))
-                        Text(p.title, fontSize = 11.sp, maxLines = 1, softWrap = false, color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(p.title, fontSize = 11.sp, maxLines = 1, softWrap = false, color = tint)
                     }
                 }
             }
         }
     }
 }
-@Composable fun AppCard(content: @Composable ColumnScope.() -> Unit) = Surface(Modifier.fillMaxWidth().padding(bottom = 12.dp), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(.45f))) { Column(Modifier.padding(16.dp), content = content) }
-@Composable fun LabelButton(onClick: () -> Unit, icon: ImageVector, text: String, modifier: Modifier = Modifier, enabled: Boolean = true) = FilledTonalButton(onClick, modifier, enabled = enabled, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) { Icon(icon, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text(text, maxLines = 1) }
+/** 卡片层级：Muted 用底色分层，Outlined 用于需要强调或被选中的块。 */
+enum class CardVariant { Muted, Outlined }
+
+@Composable
+fun AppCard(
+    variant: CardVariant = CardVariant.Muted,
+    content: @Composable ColumnScope.() -> Unit,
+) = Surface(
+    Modifier.fillMaxWidth().padding(bottom = Tokens.GapM),
+    shape = Tokens.CardShape,
+    color = if (variant == CardVariant.Outlined) MaterialTheme.colorScheme.surface
+    else MaterialTheme.colorScheme.surfaceContainerLow,
+    border = if (variant == CardVariant.Outlined) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(.6f))
+    } else null,
+) { Column(Modifier.padding(Tokens.GapL), content = content) }
+
+/**
+ * 统一空状态：图标 + 主文案 + 一句说明 + 可选主操作。
+ * 各页面之前都用一个放大镜图标配一句话，用户看不出「这里本该有什么、下一步做什么」。
+ */
+@Composable
+fun EmptyState(
+    icon: ImageVector,
+    title: String,
+    hint: String? = null,
+    action: (@Composable () -> Unit)? = null,
+) = Column(
+    Modifier.fillMaxWidth().padding(vertical = 36.dp),
+    horizontalAlignment = Alignment.CenterHorizontally,
+) {
+    Surface(
+        Modifier.size(56.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) { Box(contentAlignment = Alignment.Center) { Icon(icon, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) } }
+    Spacer(Modifier.height(14.dp))
+    Text(title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+    if (hint != null) {
+        Spacer(Modifier.height(6.dp))
+        Text(hint, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+    }
+    if (action != null) { Spacer(Modifier.height(16.dp)); action() }
+}
+@Composable
+fun LabelButton(
+    onClick: () -> Unit,
+    icon: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    // 按钮自己管按压反馈：Material 按钮默认只有波纹，没有下压位移。
+    val source = remember { MutableInteractionSource() }
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = modifier.pressScale(source),
+        enabled = enabled,
+        interactionSource = source,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Icon(icon, null, Modifier.size(18.dp))
+        Spacer(Modifier.width(7.dp))
+        Text(text, maxLines = 1)
+    }
+}
 @Composable fun ConfigSummary(c: ServiceConfig) {
     Row(verticalAlignment = Alignment.CenterVertically) { Surface(Modifier.size(42.dp), color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(13.dp)) { Box(contentAlignment = Alignment.Center) { Text(c.name.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer) } }; Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) { Text(c.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); if (c.notes.isNotBlank()) Text(c.notes, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis) } }
 }
@@ -221,7 +411,86 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
     val normalized = remember(endpoint, endpointFix) {
         if (endpoint.isBlank()) null else Endpoint.normalize(endpoint, endpointFix)
     }
-    AlertDialog(close, title = { Text(if (old == null) "添加服务配置" else "编辑服务配置") }, text = { Column(Modifier.verticalScroll(rememberScrollState())) { Field("配置名称", name) { name = it }; ExposedDropdownMenuBox(expanded, { expanded = it }) { OutlinedTextField(provider, {}, Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable), readOnly = true, label = { Text("服务商模板") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) }); ExposedDropdownMenu(expanded, { expanded = false }) { providerTemplates.forEach { t -> DropdownMenuItem(text = { Text(t.name) }, onClick = { provider = if (t.name == "空白模板" || t.name == "自定义") "" else t.name; endpoint = t.endpoint; expanded = false }) } } }; Field("API Endpoint（选填）", endpoint) { endpoint = it }; normalized?.let { r -> if (r.note.isNotEmpty()) Text(r.note, Modifier.padding(start = 4.dp, bottom = 4.dp), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }; OutlinedTextField(key, { key = it }, Modifier.fillMaxWidth(), label = { Text("API Key（选填）") }, singleLine = true, visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(), trailingIcon = { Row { IconButton({ visible = !visible }) { Icon(if (visible) Lucide.EyeOff else Lucide.Eye, "显示或隐藏密钥") }; IconButton({ clipboard.setText(AnnotatedString(key)); toast("API Key 已复制") }) { Icon(Lucide.Copy, "复制密钥") } } }); Field("备注（选填）", notes) { notes = it } } }, confirmButton = { Button({ if (name.isBlank()) toast("请填写配置名称") else scope.launch { val finalEndpoint = if (endpoint.isBlank()) "" else Endpoint.normalize(endpoint, endpointFix).endpoint; repo.dao.save(ServiceConfig(old?.id ?: 0, name.trim(), provider, if (key.isBlank()) "" else repo.crypto.encrypt(key.trim()), finalEndpoint, "", "", notes, old?.enabled ?: true, old?.isDefault ?: false, old?.createdAt ?: System.currentTimeMillis(), 0, "配置已更新，请重新检测", null, old?.extensionsJson ?: "{}", "[]", old?.source)); close(); toast("配置已保存") } }) { Text("保存") } }, dismissButton = { TextButton(close) { Text("取消") } })
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = close,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 28.dp)
+        ) {
+            Text(
+                if (old == null) "添加服务配置" else "编辑服务配置",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(10.dp))
+            Field("配置名称", name) { name = it }
+            ExposedDropdownMenuBox(expanded, { expanded = it }) {
+                OutlinedTextField(
+                    provider, {}, Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    readOnly = true,
+                    label = { Text("服务商模板") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                )
+                ExposedDropdownMenu(expanded, { expanded = false }) {
+                    providerTemplates.forEach { t ->
+                        DropdownMenuItem(text = { Text(t.name) }, onClick = {
+                            provider = if (t.name == "空白模板" || t.name == "自定义") "" else t.name
+                            endpoint = t.endpoint
+                            expanded = false
+                        })
+                    }
+                }
+            }
+            Field("API Endpoint（选填）", endpoint) { endpoint = it }
+            normalized?.let { r ->
+                if (r.note.isNotEmpty()) Text(
+                    r.note,
+                    Modifier.padding(start = 4.dp, bottom = 4.dp),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            OutlinedTextField(
+                key, { key = it }, Modifier.fillMaxWidth(),
+                label = { Text("API Key（选填）") },
+                singleLine = true,
+                visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    Row {
+                        IconButton({ visible = !visible }) { Icon(if (visible) Lucide.EyeOff else Lucide.Eye, "显示或隐藏密钥") }
+                        IconButton({ clipboard.setText(AnnotatedString(key)); toast("API Key 已复制") }) { Icon(Lucide.Copy, "复制密钥") }
+                    }
+                },
+            )
+            Field("备注（选填）", notes) { notes = it }
+            Spacer(Modifier.height(18.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(close, Modifier.weight(1f)) { Text("取消") }
+                Button(
+                    onClick = {
+                        if (name.isBlank()) toast("请填写配置名称")
+                        else scope.launch {
+                            val finalEndpoint = if (endpoint.isBlank()) "" else Endpoint.normalize(endpoint, endpointFix).endpoint
+                            repo.dao.save(ServiceConfig(old?.id ?: 0, name.trim(), provider, if (key.isBlank()) "" else repo.crypto.encrypt(key.trim()), finalEndpoint, "", "", notes, old?.enabled ?: true, old?.isDefault ?: false, old?.createdAt ?: System.currentTimeMillis(), 0, "配置已更新，请重新检测", null, old?.extensionsJson ?: "{}", "[]", old?.source))
+                            close()
+                            toast("配置已保存")
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                ) { Text("保存") }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
 }
 @Composable fun Field(label: String, value: String, change: (String) -> Unit) = OutlinedTextField(value, change, Modifier.fillMaxWidth().padding(vertical = 5.dp), label = { Text(label) }, singleLine = true)
 @Composable fun DiagnosticsPage(configs: List<ServiceConfig>, repo: VaultRepository, appVersion: String, toast: (String) -> Unit) {
@@ -256,13 +525,44 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 }
 @Composable private fun ExpandableCard(title: String, icon: ImageVector, subtitle: String = "", content: @Composable ColumnScope.() -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    // 箭头跟着展开进度旋转，而不是两帧硬切图标；整行可点，不再只有小箭头有效。
+    val chevron by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(durationMillis = Motion.EXPAND_MS),
+        label = "chevron",
+    )
     AppCard {
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { expanded = !expanded }.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null); Spacer(Modifier.width(12.dp)); Text(title, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
-            if (subtitle.isNotEmpty()) Text(subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Icon(if (expanded) Lucide.ChevronUp else Lucide.ChevronDown, "展开或收起")
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(Tokens.InnerShape)
+                .tappable(onClick = { expanded = !expanded }, shape = Tokens.InnerShape, haptic = true)
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, null); Spacer(Modifier.width(12.dp))
+            Text(title, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+            if (subtitle.isNotEmpty()) {
+                Text(
+                    subtitle,
+                    Modifier.padding(end = 8.dp),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(Lucide.ChevronDown, "展开或收起", Modifier.rotate(chevron))
         }
-        AnimatedVisibility(expanded) { Column(Modifier.padding(top = 12.dp), content = content) }
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(
+                animationSpec = tween(durationMillis = Motion.EXPAND_MS),
+                expandFrom = Alignment.Top,
+            ) + fadeIn(tween(160)),
+            exit = shrinkVertically(
+                animationSpec = tween(durationMillis = Motion.EXPAND_MS),
+                shrinkTowards = Alignment.Top,
+            ) + fadeOut(tween(120)),
+        ) { Column(Modifier.padding(top = 12.dp), content = content) }
     }
 }
 @Composable fun SettingsPage(repo: VaultRepository, prefs: android.content.SharedPreferences, mode: ThemeMode, change: (ThemeMode) -> Unit, locked: Boolean, lockChange: (Boolean) -> Unit, endpointFix: Boolean, endpointFixChange: (Boolean) -> Unit, about: () -> Unit, toast: (String) -> Unit) {

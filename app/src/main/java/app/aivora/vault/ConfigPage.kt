@@ -6,6 +6,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -72,6 +75,7 @@ fun ConfigPage(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val haptics = rememberHaptics()
 
     val openLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -85,96 +89,150 @@ fun ConfigPage(
     }
 
     // 顶部操作：选择模式下隐藏「新建」「导入」
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (!selecting) {
-            LabelButton(add, Lucide.Plus, "新建配置", Modifier.weight(1f))
-            LabelButton({ openLauncher.launch(arrayOf("application/octet-stream", "*/*")) }, Lucide.Import, "导入", Modifier.weight(1f))
-        }
-        LabelButton(
-            { selecting = !selecting; if (!selecting) picked = emptySet() },
-            Lucide.Check,
-            if (selecting) "取消" else "选择",
-            Modifier.weight(1f)
-        )
-    }
-    Spacer(Modifier.height(12.dp))
-    OutlinedTextField(
-        search, { search = it }, Modifier.fillMaxWidth(),
-        leadingIcon = { Icon(Lucide.Search, null) },
-        placeholder = { Text("搜索名称、服务商或 Endpoint") },
-        singleLine = true, shape = CircleShape
-    )
-    Spacer(Modifier.height(14.dp))
-
     val filtered = configs.filter { "${it.name} ${it.provider} ${it.endpoint} ${it.notes}".contains(search, true) }
 
-    if (filtered.isEmpty()) {
-        AppCard { Empty("还没有匹配的服务配置") }
-    } else filtered.forEach { c ->
-        val cardModifier = if (selecting) Modifier.fillMaxWidth()
-        else Modifier.fillMaxWidth().combinedClickable(
-            onClick = { },
-            onLongClick = {
-                // 长按任一配置进入选择模式，并把它勾上（与记录页行为一致）。
-                selecting = true
-                picked = picked + c.id
-            }
-        )
-        AppCard {
-            Column(cardModifier) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    if (selecting) {
-                        Checkbox(c.id in picked, { on -> picked = if (on) picked + c.id else picked - c.id })
-                        Spacer(Modifier.width(4.dp))
-                    }
-                    Box(Modifier.weight(1f).clickable(enabled = selecting) {
-                        picked = if (c.id in picked) picked - c.id else picked + c.id
-                    }) { ConfigSummary(c) }
-                }
-                // 选择模式下隐藏单条操作
+    // 列表惰性化：只组合可见行，条目多时不再一次性构建全部卡片。
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = Tokens.PagePadding,
+            end = Tokens.PagePadding,
+            top = 4.dp,
+            bottom = Tokens.NavSpace,
+        ),
+    ) {
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (!selecting) {
-                    Spacer(Modifier.height(6.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                    IconButton({ edit(c) }, Modifier.size(40.dp)) { Icon(Lucide.Edit, "编辑", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
-                    IconButton({ exporting = listOf(c) }, Modifier.size(40.dp)) { Icon(Lucide.Export, "导出", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
-                    IconButton({
-                        try {
-                            if (c.endpoint.isBlank() || c.encryptedKey.isBlank()) error("Endpoint 或 API Key 未填写")
-                            clipboard.setText(AnnotatedString(c.endpoint + "\n" + repo.crypto.decrypt(c.encryptedKey).trim()))
-                            Toast.makeText(context, "Endpoint 和 API Key 已复制", Toast.LENGTH_SHORT).show()
-                        } catch (e: Exception) { Toast.makeText(context, e.message ?: "配置不完整", Toast.LENGTH_SHORT).show() }
-                    }, Modifier.size(40.dp)) { Icon(Lucide.Copy, "复制 Endpoint 和 API Key", Modifier.size(20.dp)) }; Spacer(Modifier.width(4.dp))
-                    IconButton({ deleting = c }, Modifier.size(40.dp)) { Icon(Lucide.Trash, "删除", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error) }
+                    LabelButton(add, Lucide.Plus, "新建配置", Modifier.weight(1f))
+                    LabelButton({ openLauncher.launch(arrayOf("application/octet-stream", "*/*")) }, Lucide.Import, "导入", Modifier.weight(1f))
+                }
+                LabelButton(
+                    { selecting = !selecting; if (!selecting) picked = emptySet() },
+                    Lucide.Check,
+                    if (selecting) "取消" else "选择",
+                    Modifier.weight(1f)
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                search, { search = it }, Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Lucide.Search, null) },
+                trailingIcon = {
+                    if (search.isNotEmpty()) {
+                        IconButton({ search = "" }) { Icon(Lucide.X, "清除搜索") }
+                    }
+                },
+                placeholder = { Text("搜索名称、服务商或 Endpoint") },
+                singleLine = true, shape = CircleShape
+            )
+            if (search.isNotEmpty()) {
+                Text(
+                    "筛出 ${filtered.size} / ${configs.size} 条",
+                    Modifier.padding(start = 6.dp, top = 6.dp),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(14.dp))
+        }
+
+        if (filtered.isEmpty()) {
+            item {
+                AppCard {
+                    EmptyState(
+                        icon = if (configs.isEmpty()) Lucide.Plus else Lucide.Search,
+                        title = if (configs.isEmpty()) "还没有服务配置" else "没有匹配的配置",
+                        hint = if (configs.isEmpty()) "新建一条，或从别的软件导入" else "换个关键词试试",
+                        action = {
+                            if (configs.isEmpty()) LabelButton(add, Lucide.Plus, "新建配置")
+                        },
+                    )
+                }
+            }
+        }
+
+        items(filtered, key = { it.id }) { c ->
+            val isPicked = c.id in picked
+            val cardModifier = if (selecting) Modifier.fillMaxWidth()
+            else Modifier.fillMaxWidth().combinedClickable(
+                onClick = { },
+                onLongClick = {
+                    // 长按任一配置进入选择模式，并把它勾上（与记录页行为一致）。
+                    haptics.toggle()
+                    selecting = true
+                    picked = picked + c.id
+                }
+            )
+            AppCard(variant = if (selecting && isPicked) CardVariant.Outlined else CardVariant.Muted) {
+                Column(cardModifier) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        if (selecting) {
+                            Checkbox(c.id in picked, { on -> picked = if (on) picked + c.id else picked - c.id })
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Box(Modifier.weight(1f).clickable(enabled = selecting) {
+                            picked = if (c.id in picked) picked - c.id else picked + c.id
+                        }) { ConfigSummary(c) }
+                    }
+                    // 选择模式下隐藏单条操作
+                    if (!selecting) {
+                        Spacer(Modifier.height(6.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                            IconButton({ edit(c) }, Modifier.size(40.dp)) { Icon(Lucide.Edit, "编辑", Modifier.size(20.dp)) }; Spacer(Modifier.width(Tokens.GapXs))
+                            IconButton({ exporting = listOf(c) }, Modifier.size(40.dp)) { Icon(Lucide.Export, "导出", Modifier.size(20.dp)) }; Spacer(Modifier.width(Tokens.GapXs))
+                            IconButton({
+                                try {
+                                    if (c.endpoint.isBlank() || c.encryptedKey.isBlank()) error("Endpoint 或 API Key 未填写")
+                                    clipboard.setText(AnnotatedString(c.endpoint + "\n" + repo.crypto.decrypt(c.encryptedKey).trim()))
+                                    Toast.makeText(context, "Endpoint 和 API Key 已复制", Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) { Toast.makeText(context, e.message ?: "配置不完整", Toast.LENGTH_SHORT).show() }
+                            }, Modifier.size(40.dp)) { Icon(Lucide.Copy, "复制 Endpoint 和 API Key", Modifier.size(20.dp)) }; Spacer(Modifier.width(Tokens.GapXs))
+                            IconButton({ deleting = c }, Modifier.size(40.dp)) { Icon(Lucide.Trash, "删除", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error) }
+                        }
                     }
                 }
             }
         }
-    }
 
-    // 选择模式底部固定操作栏
-    if (selecting) {
-        AppCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("已选 ${picked.size} / ${configs.size} 个配置", Modifier.weight(1f), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton({
-                    picked = if (picked.size == configs.size) emptySet() else configs.map { it.id }.toSet()
-                }) { Text(if (picked.size == configs.size && configs.isNotEmpty()) "取消全选" else "全选") }
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LabelButton({
-                    // 与单条导出走同一个弹窗：先显示凭证，再让你选「导出」或「分享」。
-                    val targets = configs.filter { it.id in picked }
-                    if (targets.isEmpty()) toast("请先勾选要导出的配置") else exporting = targets
-                }, Lucide.Export, "导出所选", Modifier.weight(1f), enabled = picked.isNotEmpty())
-                OutlinedButton(
-                    { confirmBulkDelete = true },
-                    Modifier.weight(1f),
-                    enabled = picked.isNotEmpty(),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .7f)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Icon(Lucide.Trash, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("删除所选", maxLines = 1)
+        // 选择模式底部操作栏（作为列表最后一项，随内容滚动）
+        if (selecting) {
+            item {
+                AppCard(variant = CardVariant.Outlined) {
+                    val allPicked = filtered.isNotEmpty() && filtered.all { it.id in picked }
+                    val somePicked = !allPicked && filtered.any { it.id in picked }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TriStateCheckbox(
+                            state = when {
+                                allPicked -> ToggleableState.On
+                                somePicked -> ToggleableState.Indeterminate
+                                else -> ToggleableState.Off
+                            },
+                            onClick = {
+                                picked = if (allPicked) picked - filtered.map { it.id }.toSet()
+                                else picked + filtered.map { it.id }.toSet()
+                            },
+                        )
+                        Text("已选 ${picked.size} / ${configs.size} 个配置", Modifier.weight(1f), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TextButton({ picked = emptySet() }) { Text("清空") }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LabelButton({
+                            // 与单条导出走同一个弹窗：先显示凭证，再让你选「导出」或「分享」。
+                            val targets = configs.filter { it.id in picked }
+                            if (targets.isEmpty()) toast("请先勾选要导出的配置") else exporting = targets
+                        }, Lucide.Export, "导出所选", Modifier.weight(1f), enabled = picked.isNotEmpty())
+                        OutlinedButton(
+                            { confirmBulkDelete = true },
+                            Modifier.weight(1f),
+                            enabled = picked.isNotEmpty(),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .7f)),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(Lucide.Trash, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("删除所选", maxLines = 1)
+                        }
+                    }
                 }
             }
         }
