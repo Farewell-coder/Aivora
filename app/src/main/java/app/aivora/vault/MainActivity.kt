@@ -242,9 +242,12 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
             // 背景延伸到状态栏后面，页面内容则按 insets 让位，避免被时间/电量图标压住。
             Scaffold(containerColor = Color.Transparent, snackbarHost = { SnackbarHost(snack) }) { pad ->
                 Column(Modifier.padding(pad).fillMaxSize()) {
-                    // edge-to-edge 下 Scaffold 不吃状态栏 inset，这里显式让位：
-                    // 背景仍延伸到状态栏后面，只把内容往下推，避免被时间/电量图标压住。
-                    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                    // 【v0.1.0·修「顶部多出一段空白」】这里原本还有一条
+                    //   `Spacer(windowInsetsTopHeight(statusBars))`，理由是「edge-to-edge 下
+                    //   Scaffold 不吃状态栏 inset」。实测**已经吃过了**：上面的 `pad` 就来自
+                    //   Scaffold 的 contentWindowInsets，再补一条等于把状态栏高度算两遍，
+                    //   表现为标题下方莫名多一截空白、长列表首屏少显示一行。
+                    //   现在只保留 `pad` 一处让位；背景仍由外层 Box 延伸到状态栏后面。
                     // 标题栏固定：之前它跟着内容一起滚走，长列表里切页会失去方位感。
                     Column(Modifier.padding(horizontal = Tokens.PagePadding)) {
                         Spacer(Modifier.height(20.dp))
@@ -269,9 +272,12 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
     }
 }
 @Composable private fun PageHeader(page: Page, back: () -> Unit) {
-    Row(Modifier.fillMaxWidth().height(54.dp), verticalAlignment = Alignment.CenterVertically) {
+    // 【v0.1.0】54dp 是给 1.0 倍字体量身定的死高：系统字体放大到 1.3 后，
+    //   headlineSmall + 加粗会把行高顶到 54 以上，标题被裁、下划线与图标错位。
+    //   改成 heightIn(min=) —— 正常字号下高度完全一致，大字号时才自动撑开。
+    Row(Modifier.fillMaxWidth().heightIn(min = 54.dp), verticalAlignment = Alignment.CenterVertically) {
         if (page !in listOf(Page.Configs, Page.Diagnostics, Page.Settings)) { IconButton(back) { Icon(Lucide.ArrowLeft, "返回") }; Spacer(Modifier.width(8.dp)) }
-        else { Surface(Modifier.size(42.dp), color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(14.dp)) { Box(contentAlignment = Alignment.Center) { Text("A", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold) } }; Spacer(Modifier.width(12.dp)) }
+        else { Surface(Modifier.size(42.dp), color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(14.dp)) { Box(contentAlignment = Alignment.Center) { Text("A", color = Color.White, fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold) } }; Spacer(Modifier.width(12.dp)) }
         Text(page.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
     }; Spacer(Modifier.height(18.dp))
 }
@@ -326,7 +332,7 @@ private fun ScrollPage(
                     ) {
                         Icon(icon, p.title, Modifier.size(22.dp), tint = tint)
                         Spacer(Modifier.height(3.dp))
-                        Text(p.title, fontSize = 11.sp, maxLines = 1, softWrap = false, color = tint)
+                        Text(p.title, fontSize = 11.sp, lineHeight = 16.sp, maxLines = 1, softWrap = false, color = tint)
                     }
                 }
             }
@@ -370,10 +376,18 @@ fun EmptyState(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) { Box(contentAlignment = Alignment.Center) { Icon(icon, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) } }
     Spacer(Modifier.height(14.dp))
-    Text(title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+    Text(
+        title,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp,
+        lineHeight = 22.sp,
+        // 【v0.1.0】空状态标题居中说明「这页是空的」，不居中会左对齐贴在圆形图标下方，
+        //   与整体对称构图割裂。
+        textAlign = TextAlign.Center,
+    )
     if (hint != null) {
         Spacer(Modifier.height(6.dp))
-        Text(hint, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(hint, fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
     if (action != null) { Spacer(Modifier.height(16.dp)); action() }
 }
@@ -400,7 +414,7 @@ fun LabelButton(
     }
 }
 @Composable fun ConfigSummary(c: ServiceConfig) {
-    Row(verticalAlignment = Alignment.CenterVertically) { Surface(Modifier.size(42.dp), color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(13.dp)) { Box(contentAlignment = Alignment.Center) { Text(c.name.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer) } }; Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) { Text(c.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); if (c.notes.isNotBlank()) Text(c.notes, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis) } }
+    Row(verticalAlignment = Alignment.CenterVertically) { Surface(Modifier.size(42.dp), color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(13.dp)) { Box(contentAlignment = Alignment.Center) { Text(c.name.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer) } }; Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) { Text(c.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); if (c.notes.isNotBlank()) Text(c.notes, fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis) } }
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun ConfigEditor(old: ServiceConfig?, repo: VaultRepository, endpointFix: Boolean, close: () -> Unit, toast: (String) -> Unit) {
@@ -455,7 +469,7 @@ fun LabelButton(
                 if (r.note.isNotEmpty()) Text(
                     r.note,
                     Modifier.padding(start = 4.dp, bottom = 4.dp),
-                    fontSize = 11.sp,
+                    fontSize = 11.sp, lineHeight = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -518,10 +532,10 @@ fun LabelButton(
     fun start(c: ServiceConfig) { job = scope.launch { diagnose(c); currentId = null; job = null } }
     if (configs.isEmpty()) AppCard { Empty("暂无可检测配置") } else configs.forEach { c -> AppCard {
         Row(Modifier.fillMaxWidth().clickable { expanded = expanded.toMutableSet().apply { if (!add(c.id)) remove(c.id) } }, verticalAlignment = Alignment.CenterVertically) { Box(Modifier.weight(1f)) { ConfigSummary(c) }; Icon(if (c.id in expanded) Lucide.ChevronUp else Lucide.ChevronDown, "展开或收起") }
-        Text(c.checkStatus, Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp); Text("检测时间：${if (c.lastCheckedAt > 0) DateFormat.getDateTimeInstance().format(Date(c.lastCheckedAt)) else "未检测"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(c.checkStatus, Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 18.sp); Text("检测时间：${if (c.lastCheckedAt > 0) DateFormat.getDateTimeInstance().format(Date(c.lastCheckedAt)) else "未检测"}", fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) { LabelButton({ expanded += c.id; start(c) }, Lucide.Play, if (currentId == c.id && job?.isActive == true) "检测中" else "检测", enabled = job?.isActive != true); if (currentId == c.id && job?.isActive == true) LabelButton({ job?.cancel(); job = null; currentId = null }, Lucide.Stop, "停止") }
-        AnimatedVisibility(c.id in expanded) { Column { val items = results[c.id].orEmpty(); if (items.isEmpty()) Text("点击检测后自动拉取并展示全部模型", Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp); items.forEach { r -> Surface(Modifier.fillMaxWidth().padding(vertical = 4.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(14.dp)) { Column(Modifier.padding(12.dp)) { Row { Text(r.name, Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold); Text(r.status, fontSize = 12.sp, color = if (r.status == "可用") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }; Text("HTTP ${r.httpStatus ?: "—"} · ${r.latencyMs?.let { "$it ms" } ?: "—"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); if (r.detail.isNotEmpty()) Text(r.detail, fontSize = 12.sp); if (r.status == "不可用") LabelButton({ job = scope.launch { try { val updated = checker.testModel(c, repo.crypto.decrypt(c.encryptedKey), r.name); val list = results.getValue(c.id).map { if (it.name == r.name) updated else it }; results = results + (c.id to list); repo.dao.byId(c.id)?.let { repo.dao.save(it.copy(modelResultsJson = Json.encodeToString(list))) } } finally { job = null } } }, Lucide.Refresh, "重测此模型", enabled = job?.isActive != true) } } } } }
-    } }; AppCard { Text("仅在点击后联网，串行检测该配置的全部模型；可能消耗少量 API 额度。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        AnimatedVisibility(c.id in expanded) { Column { val items = results[c.id].orEmpty(); if (items.isEmpty()) Text("点击检测后自动拉取并展示全部模型", Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 18.sp); items.forEach { r -> Surface(Modifier.fillMaxWidth().padding(vertical = 4.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(14.dp)) { Column(Modifier.padding(12.dp)) { Row { Text(r.name, Modifier.weight(1f), fontSize = 13.sp, lineHeight = 19.sp, fontWeight = FontWeight.SemiBold); Text(r.status, fontSize = 12.sp, lineHeight = 18.sp, color = if (r.status == "可用") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }; Text("HTTP ${r.httpStatus ?: "—"} · ${r.latencyMs?.let { "$it ms" } ?: "—"}", fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); if (r.detail.isNotEmpty()) Text(r.detail, fontSize = 12.sp, lineHeight = 18.sp); if (r.status == "不可用") LabelButton({ job = scope.launch { try { val updated = checker.testModel(c, repo.crypto.decrypt(c.encryptedKey), r.name); val list = results.getValue(c.id).map { if (it.name == r.name) updated else it }; results = results + (c.id to list); repo.dao.byId(c.id)?.let { repo.dao.save(it.copy(modelResultsJson = Json.encodeToString(list))) } } finally { job = null } } }, Lucide.Refresh, "重测此模型", enabled = job?.isActive != true) } } } } }
+    } }; AppCard { Text("仅在点击后联网，串行检测该配置的全部模型；可能消耗少量 API 额度。", fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
 }
 @Composable private fun ExpandableCard(title: String, icon: ImageVector, subtitle: String = "", content: @Composable ColumnScope.() -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -546,7 +560,7 @@ fun LabelButton(
                 Text(
                     subtitle,
                     Modifier.padding(end = 8.dp),
-                    fontSize = 12.sp,
+                    fontSize = 12.sp, lineHeight = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -569,7 +583,7 @@ fun LabelButton(
     // 端点纠正卡片置顶：影响所有新建/编辑配置与密钥检测的行为。
     ExpandableCard("端点纠正", Lucide.Wand, if (endpointFix) "已开启" else "已关闭") {
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) { Text("自动纠正 API 端点", Modifier.weight(1f)); Switch(endpointFix, endpointFixChange) }
-        Text("补全 /v1、剥离重复的 /chat/completions 等接口后缀；检测失败时自动尝试候选路径。官方模板地址不会被改动。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("补全 /v1、剥离重复的 /chat/completions 等接口后缀；检测失败时自动尝试候选路径。官方模板地址不会被改动。", fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     ExpandableCard("外观", Lucide.Sun, when (mode) { ThemeMode.SYSTEM -> "跟随系统"; ThemeMode.LIGHT -> "浅色模式"; ThemeMode.DARK -> "深色模式" }) {
         listOf(Triple(ThemeMode.SYSTEM, "跟随系统", Lucide.Monitor), Triple(ThemeMode.LIGHT, "浅色模式", Lucide.Sun), Triple(ThemeMode.DARK, "深色模式", Lucide.Moon)).forEach { (value, label, icon) ->
@@ -578,7 +592,7 @@ fun LabelButton(
     }
     ExpandableCard("安全", Lucide.Lock) {
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) { Text("打开软件时验证身份", Modifier.weight(1f)); Switch(locked, lockChange) }
-        Text("使用系统生物识别或设备锁屏密码，验证通过后才能查看配置。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("使用系统生物识别或设备锁屏密码，验证通过后才能查看配置。", fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     BackupSection(repo, prefs, change, toast)
     AppCard { Row(Modifier.fillMaxWidth().clickable { about() }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Lucide.Info, null); Spacer(Modifier.width(12.dp)); Text("关于", Modifier.weight(1f), fontWeight = FontWeight.Medium); Icon(Lucide.ChevronRight, null, Modifier.size(19.dp)) } }
@@ -591,7 +605,7 @@ fun LabelButton(
     ExpandableCard("备份", Lucide.Database) {
         LabelButton({ scope.launch { busy = true; try { exportResult = withContext(Dispatchers.IO) { repo.createBackup(prefs.getString("theme", "SYSTEM")!!) } } catch (e: Exception) { toast(e.message ?: "无法生成备份") }; busy = false } }, Lucide.Export, "导出备份", Modifier.fillMaxWidth(), !busy)
         Spacer(Modifier.height(8.dp)); LabelButton({ opener.launch(arrayOf("application/octet-stream", "*/*")) }, Lucide.Import, "导入备份", Modifier.fillMaxWidth())
-        Text("备份包含全部配置、检测结果和外观设置。导入会覆盖当前全部数据。", Modifier.padding(top = 10.dp), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("备份包含全部配置、检测结果和外观设置。导入会覆盖当前全部数据。", Modifier.padding(top = 10.dp), fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     exportResult?.let { result -> AlertDialog({ exportResult = null }, title = { Text("导出全量备份") }, text = { Column { Text("请保存备份凭证。恢复时必须输入相同凭证。"); SelectionContainer { Text(result.credential, Modifier.padding(vertical = 14.dp), style = MaterialTheme.typography.bodySmall) }; LabelButton({ clipboard.setText(AnnotatedString(result.credential)); Toast.makeText(context, "备份凭证已复制", Toast.LENGTH_SHORT).show() }, Lucide.Copy, "复制凭证") } }, confirmButton = { Button({ saver.launch("Aivora-全量备份-${System.currentTimeMillis()}${Backup.EXTENSION}") }) { Text("选择保存位置") } }, dismissButton = { TextButton({ exportResult = null }) { Text("取消") } }) }
     importUri?.let { uri -> AlertDialog({ importUri = null }, title = { Text("输入备份凭证") }, text = { OutlinedTextField(credential, { credential = it }, Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation(), label = { Text("备份凭证") }, singleLine = true) }, confirmButton = { Button({ scope.launch { busy = true; try { val data = withContext(Dispatchers.IO) { Backup.import(context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("文件读取失败"), credential) }; pending = data; importUri = null } catch (e: Exception) { toast(e.message ?: "备份无效") }; busy = false } }, enabled = !busy) { Text("验证备份") } }, dismissButton = { TextButton({ importUri = null }) { Text("取消") } }) }
@@ -599,16 +613,36 @@ fun LabelButton(
 }
 @Composable fun AboutPage(protocol: () -> Unit) {
     val uri = LocalUriHandler.current
-    AppCard { Text("Aivora", fontSize = 25.sp, fontWeight = FontWeight.Bold); Text("本地 AI 配置管理工具\n版本 ${packageVersion(LocalContext.current)} · AEX 1.1\nAGPL-3.0-only\n数据仅保存在当前设备，不依赖云端账户。") }
+    AppCard { Text("Aivora", fontSize = 25.sp, lineHeight = 37.sp, fontWeight = FontWeight.Bold); Text("本地 AI 配置管理工具\n版本 ${packageVersion(LocalContext.current)} · AEX 1.1\nAGPL-3.0-only\n数据仅保存在当前设备，不依赖云端账户。") }
     AppCard { Text("开放生态", fontWeight = FontWeight.Bold); Spacer(Modifier.height(12.dp)); LabelButton(protocol, Lucide.File, "适配协议", Modifier.fillMaxWidth()); Spacer(Modifier.height(8.dp)); LabelButton({ uri.openUri("https://github.com/Farewell-coder/Aivora") }, Lucide.Github, "GitHub 项目", Modifier.fillMaxWidth()) }
-    AppCard { Text("安全边界", fontWeight = FontWeight.Bold); Text("凭证用于加密导出文件。第三方成功解密后可接触明文 API Key；请仅向可信服务提交密钥。", fontSize = 12.sp) }
+    AppCard { Text("安全边界", fontWeight = FontWeight.Bold); Text("凭证用于加密导出文件。第三方成功解密后可接触明文 API Key；请仅向可信服务提交密钥。", fontSize = 12.sp, lineHeight = 18.sp) }
 }
 @Composable fun ProtocolPage() {
     AppCard { Text("AEX 1.1", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text("Aivora Exchange Protocol 是开放的配置交换协议，版本与加密方案独立演进。") }
     AppCard { Text("文件与加密", fontWeight = FontWeight.Bold); Text("文件后缀：.akcp\n容器：8 字节 Magic + 4 字节头部长度 + UTF-8 JSON 头部 + 密文\n凭证：随机 256 位 Base32 字符串（52 字符，按 8 位分组）\n密钥派生：PBKDF2-HMAC-SHA256，600000 次迭代，16 字节随机 salt\n内容加密：AES-256-GCM，128 位认证标签，12 字节随机 nonce\n完整性：整个头部作为 AAD，篡改协议版本或加密参数会直接导致解密失败\n凭证不写入文件，仅用于派生密钥。") }
     AppCard { Text("导入与导出", fontWeight = FontWeight.Bold); Text("导出时可将单个或多个配置加密为 .akcp 文件；导入时选择文件并输入对应凭证。凭证错误、文件被修改或格式不支持时不会写入配置。\n\n导入同时支持第三方软件导出的明文配置（Chatbox、Continue、LobeChat、CC Switch、New API、Cherry Studio、.env），这些格式按其自身规则解析，无需凭证。\n\n全量备份使用独立的 .aivora-backup 格式，仅用于 Aivora 数据恢复，不与 AEX 配置交换文件混用。") }
 }
-@Composable fun Empty(text: String) = Column(Modifier.fillMaxWidth().padding(vertical = 34.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(Lucide.Search, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f)); Spacer(Modifier.height(10.dp)); Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) }
+@Composable fun Empty(text: String) = Column(
+    Modifier.fillMaxWidth().padding(vertical = 34.dp),
+    horizontalAlignment = Alignment.CenterHorizontally,
+) {
+    Icon(
+        Lucide.Search,
+        null,
+        // 【v0.1.0·图标尺寸统一】全 App 只有三档：按钮内 18/20、导航 22/24、空状态 26。
+        //   这里原来是 26dp，与 EmptyState 的 24dp 不一致，同一类「空」两种大小。
+        Modifier.size(24.dp),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f),
+    )
+    Spacer(Modifier.height(10.dp))
+    Text(
+        text,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 13.sp,
+        lineHeight = 19.sp,
+        textAlign = TextAlign.Center,
+    )
+}
 
 /** Reads versionName from the installed package; falls back to a neutral label. */
 fun packageVersion(context: android.content.Context): String = runCatching {

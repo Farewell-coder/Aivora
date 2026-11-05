@@ -144,7 +144,7 @@ fun ImportPreviewDialog(
             Column(Modifier.heightIn(max = 420.dp).verticalScroll(scroll)) {
                 Text(
                     "识别到 ${candidates.size} 条可导入配置，勾选后写入。",
-                    fontSize = 12.sp,
+                    fontSize = 12.sp, lineHeight = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(10.dp))
@@ -153,7 +153,7 @@ fun ImportPreviewDialog(
                         Text(if (picked.size == candidates.size) "取消全选" else "全选")
                     }
                     Spacer(Modifier.weight(1f))
-                    Text("已选 ${picked.size}/${candidates.size}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("已选 ${picked.size}/${candidates.size}", fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 candidates.forEachIndexed { index, c ->
                     val checked = index in picked
@@ -169,7 +169,7 @@ fun ImportPreviewDialog(
                                     Text(names[index], fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Text(
                                         c.endpoint.ifBlank { "（无端点）" },
-                                        fontSize = 11.sp,
+                                        fontSize = 11.sp, lineHeight = 16.sp,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -184,14 +184,14 @@ fun ImportPreviewDialog(
                                     Text(
                                         c.source,
                                         Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                        fontSize = 10.sp,
+                                        fontSize = 10.sp, lineHeight = 15.sp,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     if (c.apiKey.isBlank()) "无密钥" else "含密钥",
-                                    fontSize = 10.sp,
+                                    fontSize = 10.sp, lineHeight = 15.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -231,7 +231,7 @@ fun CredentialDialog(
         title = { Text("输入导入凭证") },
         text = {
             Column {
-                Text(fileName, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp)
+                Text(fileName, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, lineHeight = 18.sp)
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
                     credential,
@@ -244,7 +244,7 @@ fun CredentialDialog(
                 )
                 if (error.isNotEmpty()) {
                     Spacer(Modifier.height(6.dp))
-                    Text(error, fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                    Text(error, fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.error)
                 }
             }
         },
@@ -265,13 +265,13 @@ fun ImportFailedDialog(reason: String, showSupported: Boolean, close: () -> Unit
         title = { Text("无法导入") },
         text = {
             Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
-                Text(reason, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                Text(reason, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, lineHeight = 19.sp)
                 if (showSupported) {
                     Spacer(Modifier.height(14.dp))
-                    Text("支持以下格式：", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text("支持以下格式：", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 19.sp)
                     Spacer(Modifier.height(6.dp))
-                    Text("· Aivora 导出文件（.akcp，需要凭证）", fontSize = 12.sp)
-                    ThirdParty.SUPPORTED.forEach { Text("· $it", fontSize = 12.sp) }
+                    Text("· Aivora 导出文件（.akcp，需要凭证）", fontSize = 12.sp, lineHeight = 18.sp)
+                    ThirdParty.SUPPORTED.forEach { Text("· $it", fontSize = 12.sp, lineHeight = 18.sp) }
                 }
             }
         },

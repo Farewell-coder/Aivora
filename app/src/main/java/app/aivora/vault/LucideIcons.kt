@@ -1,65 +1,132 @@
 package app.aivora.vault
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.PathParser
-import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Activity
+import com.composables.icons.lucide.ArrowLeft
+import com.composables.icons.lucide.Check
+import com.composables.icons.lucide.ChevronDown
+import com.composables.icons.lucide.ChevronRight
+import com.composables.icons.lucide.ChevronUp
+import com.composables.icons.lucide.CircleCheck
+import com.composables.icons.lucide.Copy
+import com.composables.icons.lucide.Database
+import com.composables.icons.lucide.Download
+import com.composables.icons.lucide.Eye
+import com.composables.icons.lucide.EyeOff
+import com.composables.icons.lucide.File
+import com.composables.icons.lucide.FileInput
+import com.composables.icons.lucide.FileOutput
+import com.composables.icons.lucide.Github
+import com.composables.icons.lucide.History
+import com.composables.icons.lucide.KeyRound
+import com.composables.icons.lucide.Link2
+import com.composables.icons.lucide.List
+import com.composables.icons.lucide.Lock
+import com.composables.icons.lucide.Monitor
+import com.composables.icons.lucide.Moon
+import com.composables.icons.lucide.Play
+import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.RefreshCw
+import com.composables.icons.lucide.Search
+import com.composables.icons.lucide.Server
+import com.composables.icons.lucide.Settings
+import com.composables.icons.lucide.Share2
+import com.composables.icons.lucide.Square
+import com.composables.icons.lucide.SquarePen
+import com.composables.icons.lucide.Sun
+import com.composables.icons.lucide.Trash2
+import com.composables.icons.lucide.TriangleAlert
+import com.composables.icons.lucide.Upload
+import com.composables.icons.lucide.WandSparkles
+import com.composables.icons.lucide.X
+import com.composables.icons.lucide.Lucide as LucideSet
 
-/** Icons from Lucide (ISC), https://github.com/lucide-icons/lucide. */
+/**
+ * Lucide 图标外观层（v0.1.0 起）。
+ *
+ * 【来源】`com.composables:icons-lucide-android:1.1.0`，图标几何与
+ *   [lucide-icons/lucide](https://github.com/lucide-icons/lucide) 官方 SVG 逐字节一致，
+ *   MIT 许可（见 NOTICE）。
+ *
+ * 【为什么还留这一层】改造前这里是一份**手写近似路径**（65 行），复制图标画成了畸形方框、
+ *   分享图标其实是上传箭头、设置图标是滑杆 —— 用户反馈的「UI 错乱」里，图标占了很大一部分。
+ *   现在全部换成官方几何，但调用点仍是 `Lucide.Copy` 这种写法，业务代码一行不用改，
+ *   后续要再换图标库也只动这一个文件。
+ *
+ * 【尺寸】图标统一 24dp 视口 / 线宽 2（库内自带），实际渲染尺寸由调用方给，
+ *   规范是：按钮内 18/20dp、导航 22/24dp、空状态 26dp；同一屏内不要混用三档以上。
+ */
 object Lucide {
-    private fun icon(vararg paths: String): ImageVector = ImageVector.Builder(
-        "Lucide", 24.dp, 24.dp, 24f, 24f
-    ).apply {
-        paths.forEach { data ->
-            addPath(
-                PathParser().parsePathString(data).toNodes(), fill = null,
-                stroke = SolidColor(Color.Black), strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round
-            )
-        }
-    }.build()
 
-    val List = icon("M8 6h13", "M8 12h13", "M8 18h13", "M3 6h.01", "M3 12h.01", "M3 18h.01")
-    val Activity = icon("M22 12h-4l-3 9L9 3l-3 9H2")
-    val Settings = icon("M4 21v-7", "M4 10V3", "M12 21v-9", "M12 8V3", "M20 21v-5", "M20 12V3", "M1 14h6", "M9 8h6", "M17 16h6")
-    val Info = icon("M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20", "M12 16v-4", "M12 8h.01")
-    val Plus = icon("M5 12h14", "M12 5v14")
-    val X = icon("M18 6 6 18", "m6 6 12 12")
-    val Search = icon("M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16", "m21 21-4.3-4.3")
-    val Import = icon("M12 3v12", "m7 10 5 5 5-5", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4")
-    val Export = icon("M12 15V3", "m7 8 5-5 5 5", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4")
-    /** Lucide "share" 图标：方框上方三个连接点。 */
-    val Share = icon("M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8", "M16 6l-4-4-4 4", "M12 2v13")
-    val Edit = icon("M12 20h9", "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z")
-    val Trash = icon("M3 6h18", "M8 6V4h8v2", "m19 6-1 14H6L5 6", "M10 11v5", "M14 11v5")
-    val Copy = icon("M9 9h11v11H9z", "M4 15H3V4h11v1")
-    val ChevronDown = icon("m6 9 6 6 6-6")
-    val ChevronUp = icon("m18 15-6-6-6 6")
-    val ChevronRight = icon("m9 18 6-6-6-6")
-    val Play = icon("m6 3 14 9-14 9z")
-    val Stop = icon("M5 5h14v14H5z")
-    val Refresh = icon("M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5", "M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5")
-    val Sun = icon("M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12", "M12 2v2", "M12 20v2", "m4.93 4.93 1.42 1.42", "m17.66 17.66 1.41 1.41", "M2 12h2", "M20 12h2", "m6.34 17.66-1.41 1.41", "m19.07 4.93-1.41 1.41")
-    val Moon = icon("M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9")
-    val Monitor = icon("M2 3h20v14H2z", "M8 21h8", "M12 17v4")
-    val ArrowLeft = icon("m12 19-7-7 7-7", "M19 12H5")
-    val Check = icon("m20 6-11 11-5-5")
-    val Eye = icon("M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6")
-    val EyeOff = icon("m2 2 20 20", "M6.7 6.7C3.7 8.5 2 12 2 12s3.5 7 10 7c1.8 0 3.3-.5 4.6-1.2", "M10.7 5.1c.4-.1.9-.1 1.3-.1 6.5 0 10 7 10 7s.7 1.4 2 3", "M14.1 14.1a3 3 0 0 1-4.2-4.2")
-    val Github = icon("M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.1-1.3-.4-2.5-1-3.5.3-1.2.3-2.5 0-3.5 0 0-1 0-3 1.5a10 10 0 0 0-5 0C9 2 8 2 8 2c-.3 1-.3 2.3 0 3.5-.6 1-1.1 2.2-1 3.5C7 13.5 10 15.5 13 15.5c-.6.6-.9 1.3-1 2.5V22", "M9 18c-4.5 2-5-2-7-2")
-    val Lock = icon("M5 11h14v10H5z", "M8 11V7a4 4 0 0 1 8 0v4")
-    val Database = icon("M12 8c5 0 9-1.1 9-2.5S17 3 12 3 3 4.1 3 5.5 7 8 12 8", "M3 5.5v6C3 12.9 7 14 12 14s9-1.1 9-2.5v-6", "M3 11.5v6C3 18.9 7 20 12 20s9-1.1 9-2.5v-6")
-    val File = icon("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M8 13h8", "M8 17h8")
-    /** Lucide "history"：带箭头的时钟。 */
-    val History = icon("M3 12a9 9 0 1 0 3-6.7", "M3 3v5h5", "M12 8v4l3 2")
-    /** Lucide "link"：链条图标，用于深链导出。 */
-    val Link = icon(
-        "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71",
-        "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-    )
-    /** Lucide "wand"：魔法棒，用于端点纠正开关。 */
-    val Wand = icon("m15 4 5 5", "M3 21 14 10", "m5 3 1 3 3 1-3 1-1 3-1-3-3-1 3-1z", "m19 14 .8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z")
+    // ---- 导航 ----
+    val List: ImageVector get() = LucideSet.List
+    val Activity: ImageVector get() = LucideSet.Activity
+    val Settings: ImageVector get() = LucideSet.Settings
+    val Info: ImageVector get() = LucideSet.Info
+    val ArrowLeft: ImageVector get() = LucideSet.ArrowLeft
+    val ChevronRight: ImageVector get() = LucideSet.ChevronRight
+    val ChevronDown: ImageVector get() = LucideSet.ChevronDown
+    val ChevronUp: ImageVector get() = LucideSet.ChevronUp
+
+    // ---- 基础操作 ----
+    val Plus: ImageVector get() = LucideSet.Plus
+    val X: ImageVector get() = LucideSet.X
+    val Check: ImageVector get() = LucideSet.Check
+    val Search: ImageVector get() = LucideSet.Search
+    val Copy: ImageVector get() = LucideSet.Copy
+    val Trash: ImageVector get() = LucideSet.Trash2
+    val Edit: ImageVector get() = LucideSet.SquarePen
+    val Refresh: ImageVector get() = LucideSet.RefreshCw
+
+    // ---- 收发 / 交换 ----
+    /** 导入：箭头**向下**入盘，语义是「把外部内容收进来」。 */
+    val Import: ImageVector get() = LucideSet.Download
+    /** 导出：箭头**向上**出盘，与 [Import] 严格成对。 */
+    val Export: ImageVector get() = LucideSet.Upload
+    /** 分享：官方 share-2（三个节点 + 连线），此前误用的是上传箭头。 */
+    val Share: ImageVector get() = LucideSet.Share2
+    /** 深链：官方 link-2。 */
+    val Link: ImageVector get() = LucideSet.Link2
+    /** 单个文件。 */
+    val File: ImageVector get() = LucideSet.File
+    /** 文件输入（AEX / 深链接收语义）。 */
+    val FileInput: ImageVector get() = LucideSet.FileInput
+    /** 文件输出（导出记录语义）。 */
+    val FileOutput: ImageVector get() = LucideSet.FileOutput
+
+    // ---- 安全 / 服务 ----
+    /** 锁：官方 lock（此前画成了直角矩形）。 */
+    val Lock: ImageVector get() = LucideSet.Lock
+    /** 密钥：比锁更贴近「API Key 检测」。 */
+    val KeyRound: ImageVector get() = LucideSet.KeyRound
+    /** 服务端：端点 / 网关。 */
+    val Server: ImageVector get() = LucideSet.Server
+    /** 数据库：本地存储语义。 */
+    val Database: ImageVector get() = LucideSet.Database
+    /** 显隐密钥。 */
+    val Eye: ImageVector get() = LucideSet.Eye
+    val EyeOff: ImageVector get() = LucideSet.EyeOff
+
+    // ---- 状态 ----
+    /** 成功。 */
+    val CircleCheck: ImageVector get() = LucideSet.CircleCheck
+    /** 警告：导入失败 / 不可用模型。 */
+    val TriangleAlert: ImageVector get() = LucideSet.TriangleAlert
+    /** 运行中。 */
+    val Play: ImageVector get() = LucideSet.Play
+    /** 停止：官方 square（实心方块），此前是自绘的 Stop。 */
+    val Stop: ImageVector get() = LucideSet.Square
+
+    // ---- 外观 ----
+    val Sun: ImageVector get() = LucideSet.Sun
+    val Moon: ImageVector get() = LucideSet.Moon
+    val Monitor: ImageVector get() = LucideSet.Monitor
+
+    // ---- 其他语义 ----
+    /** 端点纠正：官方 wand-sparkles。 */
+    val Wand: ImageVector get() = LucideSet.WandSparkles
+    /** 导出历史。 */
+    val History: ImageVector get() = LucideSet.History
+    /** 项目仓库。 */
+    val Github: ImageVector get() = LucideSet.Github
 }

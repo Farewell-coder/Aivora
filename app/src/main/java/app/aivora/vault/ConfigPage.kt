@@ -130,7 +130,7 @@ fun ConfigPage(
                 Text(
                     "筛出 ${filtered.size} / ${configs.size} 条",
                     Modifier.padding(start = 6.dp, top = 6.dp),
-                    fontSize = 11.sp,
+                    fontSize = 11.sp, lineHeight = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -154,6 +154,9 @@ fun ConfigPage(
 
         items(filtered, key = { it.id }) { c ->
             val isPicked = c.id in picked
+            // 【v0.1.0·条目动画】增删 / 筛选时平滑让位，不再整屏闪跳。
+            //   动画本身由 LazyColumn 托管，不额外引入任何依赖。
+            Column(Modifier.animateItem()) {
             val cardModifier = if (selecting) Modifier.fillMaxWidth()
             else Modifier.fillMaxWidth().combinedClickable(
                 onClick = { },
@@ -193,6 +196,7 @@ fun ConfigPage(
                     }
                 }
             }
+            }
         }
 
         // 选择模式底部操作栏（作为列表最后一项，随内容滚动）
@@ -213,7 +217,7 @@ fun ConfigPage(
                                 else picked + filtered.map { it.id }.toSet()
                             },
                         )
-                        Text("已选 ${picked.size} / ${configs.size} 个配置", Modifier.weight(1f), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("已选 ${picked.size} / ${configs.size} 个配置", Modifier.weight(1f), fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         TextButton({ picked = emptySet() }) { Text("清空") }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -282,8 +286,8 @@ fun ConfigPage(
             profiles = remember(targets) { targets.map { repo.toAex(it) } },
             header = if (single) null else {
                 {
-                    Text("包含配置", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    targets.forEach { Text("· ${it.name}", fontSize = 12.sp) }
+                    Text("包含配置", fontSize = 12.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold)
+                    targets.forEach { Text("· ${it.name}", fontSize = 12.sp, lineHeight = 18.sp) }
                 }
             },
             // 深链只支持单条配置：批量导出时传 null，按钮不出现。
@@ -316,7 +320,7 @@ fun ConfigPage(
                 Column {
                     Text(
                         "配置将以明文链接交给所选软件，不加密、不需要凭证，也不会记入导出记录。",
-                        fontSize = 12.sp,
+                        fontSize = 12.sp, lineHeight = 18.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(10.dp))

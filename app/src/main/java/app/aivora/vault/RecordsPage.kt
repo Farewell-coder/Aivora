@@ -85,7 +85,7 @@ fun RecordsPage(
     ) {
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("共 ${records.size} 条导出记录", modifier = Modifier.weight(1f), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("共 ${records.size} 条导出记录", modifier = Modifier.weight(1f), fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (records.isNotEmpty()) {
                     LabelButton(
                         { selecting = !selecting; if (!selecting) picked = emptySet() },
@@ -117,12 +117,14 @@ fun RecordsPage(
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.background)
                         .padding(start = 4.dp, top = 10.dp, bottom = 6.dp),
-                    fontSize = 12.sp,
+                    fontSize = 12.sp, lineHeight = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             items(dayItems, key = { it.id }) { record ->
+                // 【v0.1.0·条目动画】记录被删除 / 分组变化时平滑过渡，不再整列表闪一下。
+                Column(Modifier.animateItem()) {
                 val names = remember(record.id, record.configNames) { parseNames(record.configNames) }
                 val missing = remember(record.id, names, configs) {
                     // 「原配置已删除」判定：名称在当前配置里找不到。
@@ -156,24 +158,25 @@ fun RecordsPage(
                             Spacer(Modifier.height(3.dp))
                             Text(
                                 "${record.configCount} 个配置 · ${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.exportedAt))}",
-                                fontSize = 11.sp,
+                                fontSize = 11.sp, lineHeight = 16.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (names.isNotEmpty()) {
                                 Text(
                                     names.joinToString("、"),
-                                    fontSize = 11.sp,
+                                    fontSize = 11.sp, lineHeight = 16.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             if (missing) {
-                                Text("原配置已删除", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .7f))
+                                Text("原配置已删除", fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .7f))
                             }
                         }
                         if (!selecting) Icon(Lucide.ChevronRight, null, Modifier.size(19.dp))
                     }
+                }
                 }
             }
         }
@@ -196,7 +199,7 @@ fun RecordsPage(
                                 else picked + records.map { it.id }.toSet()
                             },
                         )
-                        Text("已选 ${picked.size} / ${records.size} 条", Modifier.weight(1f), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("已选 ${picked.size} / ${records.size} 条", Modifier.weight(1f), fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         TextButton({ picked = emptySet() }) { Text("清空") }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -262,25 +265,25 @@ fun RecordsPage(
             title = { Text("导出记录") },
             text = {
                 Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
-                    Text(record.fileName, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text(record.fileName, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 19.sp)
                     Text(
                         DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(record.exportedAt)),
-                        fontSize = 11.sp,
+                        fontSize = 11.sp, lineHeight = 16.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(10.dp))
 
                     if (names.isNotEmpty()) {
-                        Text("包含配置", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        names.forEach { Text("· $it", fontSize = 12.sp) }
+                        Text("包含配置", fontSize = 12.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold)
+                        names.forEach { Text("· $it", fontSize = 12.sp, lineHeight = 18.sp) }
                         Spacer(Modifier.height(10.dp))
                     }
 
                     if (snapshot == null) {
-                        Text("早期记录：未保存快照，无法重新导出。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("早期记录：未保存快照，无法重新导出。", fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
-                    Text("导出凭证", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("导出凭证", fontSize = 12.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
                     Surface(
                         Modifier.fillMaxWidth(),
@@ -291,7 +294,7 @@ fun RecordsPage(
                             Text(
                                 credential.ifBlank { "—" },
                                 Modifier.padding(14.dp),
-                                fontSize = 12.sp,
+                                fontSize = 12.sp, lineHeight = 18.sp,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -350,7 +353,7 @@ fun RecordsPage(
                         Text(
                             "重新导出使用当时的完整快照与当时的凭证，内容与最初那次完全一致。",
                             Modifier.padding(top = 8.dp),
-                            fontSize = 11.sp,
+                            fontSize = 11.sp, lineHeight = 16.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

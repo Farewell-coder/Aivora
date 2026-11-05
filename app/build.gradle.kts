@@ -14,9 +14,9 @@ android {
         applicationId = "app.aivora.vault"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
+        versionCode = 10
         ndk { abiFilters += "arm64-v8a" }
-        versionName = "0.0.9"
+        versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     // 【签名配置】读 keystore.properties（不入版本库，见 .gitignore）。
@@ -89,6 +89,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
+    // 【v0.1.0·Lucide 官方图标】composables.composeicons 提供的 Lucide ImageVector 集合
+    //   （1521 枚，MIT 许可）。选 1.1.0 而不是最新的 2.2.1：2.2.1 依赖 Kotlin 2.2.21，
+    //   本工程是 Kotlin 2.0.21，直接拉会因元数据版本不兼容编译失败。
+    //   1.1.0 依赖 Compose foundation 1.6.7（runtime scope），会被上面的 BOM 覆盖到 1.7.x。
+    implementation("com.composables:icons-lucide-android:1.1.0")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")

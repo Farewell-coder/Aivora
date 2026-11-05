@@ -127,7 +127,7 @@ fun ExportSheet(
                 }
                 Text(
                     "保存到本机，或直接分享给其他软件。接收方必须输入下面的凭证才能读取配置。",
-                    fontSize = 12.sp,
+                    fontSize = 12.sp, lineHeight = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(10.dp))
@@ -145,8 +145,8 @@ fun ExportSheet(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("文件已加密，凭证单独传递；不会随文件一起发出。", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("该文件包含完整 API Key，接收应用解密后可读取明文，请仅分享给可信应用。", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                Text("文件已加密，凭证单独传递；不会随文件一起发出。", fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("该文件包含完整 API Key，接收应用解密后可读取明文，请仅分享给可信应用。", fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.error)
                 Spacer(Modifier.height(8.dp))
                 LabelButton(
                     {
