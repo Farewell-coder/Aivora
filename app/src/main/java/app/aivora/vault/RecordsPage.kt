@@ -10,7 +10,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.stickyHeader
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -111,7 +110,7 @@ fun RecordsPage(
         }
 
         grouped.forEach { (day, dayItems) ->
-            stickyHeader {
+            item(key = "day-$day") {
                 Text(
                     day,
                     Modifier
