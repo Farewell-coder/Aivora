@@ -186,7 +186,7 @@ AEX 是 Aivora 的**完整、独立、唯一**的配置交换协议。不存在�
 | [官方测试向量](protocol/test-vectors/) | 可直接拿来验证你的实现 |
 | [示例](protocol/examples/) | 单配置、多配置、加密包三个完整示例 |
 
-**已适配列表与登记方式**见 [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md)。目前尚无第三方软件完成适配，列表为空——欢迎提交。
+**已适配列表与登记方式**见 [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md)。目前 **Dollhouse** 已完成 AEX 1.1 适配（文件 + 深链），状态为「自行声明」；欢迎其它软件按模板提交。
 
 ## 参与贡献
 
