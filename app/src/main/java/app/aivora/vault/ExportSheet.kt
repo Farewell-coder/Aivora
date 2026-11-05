@@ -193,11 +193,17 @@ fun ExportSheet(
                                 working = true
                                 try {
                                     val data = exported ?: error("导出内容生成失败")
-                                    if (!AexShare.canShare(context)) error("没有可接收分享的应用")
                                     val prepared = AexShare.prepare(context, data, safeName, title)
                                         .getOrElse { error(it.message ?: "无法生成临时文件") }
+                                    // 不用 canShare() 硬拦：包可见性下它看不到「保存到文件」、蓝牙等
+                                    // 系统接收方，误判会让分享按钮点不动。直接投递，让系统 chooser 决定；
+                                    // 真的没有接收方时 startActivity 会抛 ActivityNotFoundException。
+                                    try {
+                                        context.startActivity(prepared.first)
+                                    } catch (_: android.content.ActivityNotFoundException) {
+                                        error("没有可接收分享的应用")
+                                    }
                                     recordIfNew(data.credential)
-                                    context.startActivity(prepared.first)
                                     close(); toast("已生成 .akcp 文件，请选择接收应用")
                                 } catch (e: Exception) { toast(e.message ?: "分享失败") } finally { working = false }
                             }

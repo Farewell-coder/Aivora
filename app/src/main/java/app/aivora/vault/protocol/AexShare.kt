@@ -64,13 +64,30 @@ object AexShare {
         }
     }
 
-    /** Returns whether any installed activity can receive the AEX chooser. */
-    fun canShare(context: Context): Boolean {
+    /**
+     * 预检：系统里是否存在处理 AEX 分享的应用。
+     *
+     * 【为什么要保留这个函数却不再硬阻断】Android 11+ 的包可见性规则下，
+     * `queryIntentActivities` 只能看到 manifest `<queries>` 里声明过的目标，
+     * 以及系统自带组件。而 `ACTION_SEND` 的真实接收方五花八门：系统「保存到文件」、
+     * 蓝牙、邮件、网盘客户端……不可能全部枚举。因此这里返回 false **不代表**分享会失败，
+     * 只是「我确定看不到任何接收方」。
+     *
+     * 调用方应当把它当成提示而非闸门：为 false 时仍然尝试投递，交给系统 chooser 决定，
+     * 只有在 `startActivity` 真的抛出 `ActivityNotFoundException` 时才提示无可用应用。
+     * 见 [ExportSheet] 的分享按钮。
+     *
+     * 目前没有生产调用点，仅保留给诊断与将来的设置页「分享可用性检查」使用；
+     * 标记为 internal 以免被误当成拦截条件。
+     */
+    internal fun canShare(context: Context): Boolean {
         val probe = Intent(Intent.ACTION_SEND).apply {
             type = Aex.MIME_TYPE
             putExtra(Intent.EXTRA_STREAM, Uri.parse("content://${context.packageName}.aexfile/probe"))
         }
-        return context.packageManager.queryIntentActivities(probe, 0).isNotEmpty()
+        return runCatching {
+            context.packageManager.queryIntentActivities(probe, 0).isNotEmpty()
+        }.getOrDefault(false)
     }
 
     fun sanitize(name: String): String = Aex.sanitizeFileName(name)

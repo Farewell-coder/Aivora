@@ -269,14 +269,16 @@ fun RecordsPage(
                                         busy = true
                                         try {
                                             val data = withContext(Dispatchers.Default) { Aex.export(profiles, appVersion, credential) }
-                                            if (AexShare.canShare(context)) {
-                                                val prepared = AexShare.prepare(context, data, record.fileName, "Aivora 配置（${profiles.size} 项）")
-                                                    .getOrElse { error(it.message ?: "无法生成临时文件") }
+                                            val prepared = AexShare.prepare(context, data, record.fileName, "Aivora 配置（${profiles.size} 项）")
+                                                .getOrElse { error(it.message ?: "无法生成临时文件") }
+                                            // 与导出弹窗一致：不用 canShare() 硬拦，交给系统 chooser；
+                                            // 真的没有接收方时 startActivity 会抛 ActivityNotFoundException。
+                                            try {
                                                 context.startActivity(prepared.first)
-                                                detail = null
-                                            } else {
-                                                toast("没有可接收分享的应用")
+                                            } catch (_: android.content.ActivityNotFoundException) {
+                                                error("没有可接收分享的应用")
                                             }
+                                            detail = null
                                         } catch (e: Exception) { toast(e.message ?: "分享失败") } finally { busy = false }
                                     }
                                 },
