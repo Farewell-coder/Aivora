@@ -104,7 +104,11 @@ fun ConfigPage(
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (!selecting) {
-                    LabelButton(add, Lucide.Plus, "新建配置", Modifier.weight(1f))
+                    // 【v0.1.2·文案收敛】「新建配置」→「新建」：
+                    //   这一页本身就是「服务配置」列表，再写「配置」二字是重复信息。
+                    //   更重要的是：三个按钮等宽时，4 个汉字在 100dp 宽的药丸里必然挤，
+                    //   2 个字能稳稳放下，也不会因大字体被截断。
+                    LabelButton(add, Lucide.Plus, "新建", Modifier.weight(1f))
                     LabelButton({ openLauncher.launch(arrayOf("application/octet-stream", "*/*")) }, Lucide.Import, "导入", Modifier.weight(1f))
                 }
                 LabelButton(
@@ -115,11 +119,17 @@ fun ConfigPage(
                 )
             }
             Spacer(Modifier.height(12.dp))
+            // 【v0.1.2·搜索框不挂 label】
+            //   原来传 label = "搜索配置"，Material3 的 OutlinedTextField 有 label 时会把
+            //   label 浮到边框上方、正文压到下方，而框体最小高度仍按 56dp 算；
+            //   再叠 CircleShape（圆角 = 半个高），圆角把高框拉成椭圆，
+            //   视觉上就是「那个椭圆背景框偏长，文字在上面，下面偏了一大串白的」。
+            //   搜索框有 placeholder 就够了，label 传 null，文字自然垂直居中、框高贴合内容。
             AivoraField(
-                label = "搜索配置",
+                label = null,
                 value = search,
                 onValueChange = { search = it },
-                placeholder = "名称、服务商或 Endpoint",
+                placeholder = "搜索名称、服务商或 Endpoint",
                 shape = CircleShape,
                 leadingIcon = { Icon(Lucide.Search, null) },
                 trailingIcon = {

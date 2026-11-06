@@ -468,11 +468,25 @@ fun LabelButton(
         modifier = modifier.pressScale(source),
         enabled = enabled,
         interactionSource = source,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        // 【v0.1.2·修「顶部按钮还是挤」】13dp 是 FilledTonalButton 的**最小**内部留白：
+        //   之前写的 14dp 在等宽布局里（三个按钮各占 1/3 宽，360dp 屏上约 100dp/个）
+        //   会导致「28dp 内边距 + 18dp 图标 + 7dp 间距 + 4 个汉字 ≈ 113dp」超出可用宽度，
+        //   文字被压缩甚至截断 —— 用户看到的就是「按钮没修好」。
+        //   现在把可用宽度还给文字：内边距 12dp、图标间距 6dp，并让文字可收缩。
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
     ) {
+        // 【图标尺寸】18dp 是按钮内档位（与 App 其它按钮一致），不随字号放大。
         Icon(icon, null, Modifier.size(18.dp))
-        Spacer(Modifier.width(7.dp))
-        Text(text, maxLines = 1)
+        Spacer(Modifier.width(6.dp))
+        // 【关键】给 Text 一个可收缩的约束：宽度不够时按 ellipsis 收，而不是把整行撑出去。
+        //   `Modifier.weight(1f, fill = false)` 让它按剩余宽度参与分配，且不强制填满。
+        Text(
+            text = text,
+            modifier = Modifier.weight(1f, fill = false),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
+        )
     }
 }
 @Composable fun ConfigSummary(c: ServiceConfig) {
@@ -579,7 +593,7 @@ fun LabelButton(
  */
 @Composable
 fun AivoraField(
-    label: String,
+    label: String?,
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -598,7 +612,12 @@ fun AivoraField(
         onValueChange = onValueChange,
         modifier = modifier.fillMaxWidth(),
         readOnly = readOnly,
-        label = { Text(label) },
+        // 【v0.1.2·label 可为空】搜索这类「有 placeholder 就够」的输入框不该再挂一个
+        //   浮动 label：Material3 的 OutlinedTextField 一旦有 label，label 会浮到边框上方、
+        //   正文沉到下方，而框体的**最小高度仍是 56dp** —— 叠上 CircleShape 圆角，
+        //   就表现为「椭圆框偏长、文字偏上、下面留一大串白」。
+        //   传 null 时只保留 placeholder，文字自然垂直居中，框高贴回内容。
+        label = if (label != null) { { Text(label) } } else null,
         placeholder = if (placeholder != null) { { Text(placeholder) } } else null,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
