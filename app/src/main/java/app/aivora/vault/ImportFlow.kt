@@ -231,7 +231,7 @@ fun CredentialDialog(
         title = { Text("输入导入凭证") },
         text = {
             Column {
-                Text(fileName, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, lineHeight = 18.sp)
+                Text(fileName, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp)
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
                     credential,

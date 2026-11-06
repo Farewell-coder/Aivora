@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -121,7 +122,53 @@ object Tokens {
 
     /** 底部悬浮导航占用的空间，列表底部要留出来。 */
     val NavSpace = 132.dp
+
+    /* ================= v0.1.1 · 字号 / 行高阶梯 =================
+     * 【为什么要有这一份】v0.1.0 给 54 处内联 fontSize 逐个补了行高，解决了「挤在一起」，
+     *   但没解决「同一页里两种字号」—— 每个调用点自己决定 11/12/13sp，改一处观感就漂一次。
+     *   这里把字号收成 6 档，行高统一取字号的 1.45 倍（中文可读区间 1.4–1.5），
+     *   新代码直接用 [MaterialTheme.typography] 的槽位，不再写字面量。
+     * 【为什么用 Tag 而不是新建对象】Material3 的 Typography 槽位是固定的 15 个，
+     *   把常用的 6 档挂到语义最接近的槽上，既不改调用习惯，也能被 Components 复用。
+     */
+    const val FS_DISPLAY = 22f
+    const val FS_TITLE = 18f
+    const val FS_BODY = 15f
+    const val FS_LABEL = 14f
+    const val FS_CAPTION = 13f
+    const val FS_MINI = 12f
 }
+
+/**
+ * 全局排版阶梯。
+ *
+ * 【行高口径】每档行高 = 字号 × 1.45，取整；12sp→18、13sp→19、14sp→20、15sp→22、18sp→26、22sp→32。
+ * 【为什么不是每个 Text 都改】v0.1.0 已经逐处补过行高，这里提供的是**语义槽位**，
+ *   供新代码与后续重构使用；老代码的行高数值与这里一致，不会出现两套口径打架。
+ */
+private val AivoraTypography = Typography(
+    headlineSmall = androidx.compose.ui.text.TextStyle(
+        fontSize = Tokens.FS_DISPLAY.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold,
+    ),
+    titleLarge = androidx.compose.ui.text.TextStyle(
+        fontSize = Tokens.FS_TITLE.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold,
+    ),
+    titleMedium = androidx.compose.ui.text.TextStyle(
+        fontSize = Tokens.FS_BODY.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold,
+    ),
+    bodyLarge = androidx.compose.ui.text.TextStyle(
+        fontSize = Tokens.FS_BODY.sp, lineHeight = 22.sp,
+    ),
+    bodyMedium = androidx.compose.ui.text.TextStyle(
+        fontSize = Tokens.FS_CAPTION.sp, lineHeight = 19.sp,
+    ),
+    bodySmall = androidx.compose.ui.text.TextStyle(
+        fontSize = Tokens.FS_MINI.sp, lineHeight = 18.sp,
+    ),
+    labelLarge = androidx.compose.ui.text.TextStyle(
+        fontSize = Tokens.FS_LABEL.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium,
+    ),
+)
 
 /** 浅色方案：补齐 surfaceContainer 层级，卡片不再靠边框区分。 */
 private val LightScheme = lightColorScheme(
@@ -188,6 +235,7 @@ fun AivoraTheme(dark: Boolean, content: @Composable () -> Unit) {
     }
     MaterialTheme(
         colorScheme = scheme,
+        typography = AivoraTypography,
         shapes = Shapes(
             small = Tokens.InnerShape,
             medium = Tokens.CardShape,
@@ -277,7 +325,7 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
     //   改成 heightIn(min=) —— 正常字号下高度完全一致，大字号时才自动撑开。
     Row(Modifier.fillMaxWidth().heightIn(min = 54.dp), verticalAlignment = Alignment.CenterVertically) {
         if (page !in listOf(Page.Configs, Page.Diagnostics, Page.Settings)) { IconButton(back) { Icon(Lucide.ArrowLeft, "返回") }; Spacer(Modifier.width(8.dp)) }
-        else { Surface(Modifier.size(42.dp), color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(14.dp)) { Box(contentAlignment = Alignment.Center) { Text("A", color = Color.White, fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold) } }; Spacer(Modifier.width(12.dp)) }
+        else { Surface(Modifier.size(42.dp), color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(14.dp)) { Box(contentAlignment = Alignment.Center) { Text("A", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold) } }; Spacer(Modifier.width(12.dp)) }
         Text(page.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
     }; Spacer(Modifier.height(18.dp))
 }
@@ -308,7 +356,12 @@ private fun ScrollPage(
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .32f)),
             shadowElevation = 8.dp
         ) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.SpaceAround) {
+            // 【v0.1.1·修「按键很偏」】原来是 SpaceAround + 内容自适应宽度：
+            //   四个标题字数不同（「服务配置」4 字、「设置」2 字），药丸宽度差一截，
+            //   SpaceAround 按各自宽度分配空隙，结果是**四个图标间距肉眼可见不均**，
+            //   「设置」那个又窄又靠边，看着像排歪了。
+            //   改成每个项等宽（weight = 1f）后，四等分均分，中心间距严格一致。
+            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 5.dp)) {
                 listOf(Page.Configs to Lucide.List, Page.Diagnostics to Lucide.Activity, Page.Records to Lucide.History, Page.Settings to Lucide.Settings).forEach { (p, icon) ->
                     val active = selected == p
                     // 底色过渡而不是硬切，切换时能看出「从哪个走到哪个」。
@@ -320,6 +373,7 @@ private fun ScrollPage(
                     val tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     Column(
                         Modifier
+                            .weight(1f)
                             .clip(RoundedCornerShape(18.dp))
                             .background(pill)
                             .tappable(
@@ -327,12 +381,16 @@ private fun ScrollPage(
                                 shape = RoundedCornerShape(18.dp),
                                 haptic = true,
                             )
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Icon(icon, p.title, Modifier.size(22.dp), tint = tint)
                         Spacer(Modifier.height(3.dp))
-                        Text(p.title, fontSize = 11.sp, lineHeight = 16.sp, maxLines = 1, softWrap = false, color = tint)
+                        // 【v0.1.1·不加行高】导航标签是**单行**且高度由药丸内边距决定：
+                        //   lineHeight 只影响多行排布，单行时反而把字形在药丸里顶偏；
+                        //   softWrap=false 在字体放大后会让 4 字标签超出药丸、左右被裁，
+                        //   看上去「字没在中心」。这里两个都去掉，交给单行自然居中。
+                        Text(p.title, fontSize = 11.sp, maxLines = 1, color = tint)
                     }
                 }
             }
@@ -370,9 +428,12 @@ fun EmptyState(
     Modifier.fillMaxWidth().padding(vertical = 36.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
 ) {
+    // 【v0.1.1·修「那个圆有点突兀」】56dp 正圆和全 App 的圆角语言（卡片 20 / 内块 14）
+    //   不是一套：满屏圆角矩形里突然出现一个正圆，视觉上会「跳出来」。
+    //   改成同样 56dp 的圆角方形（18dp 圆角，介于卡片与内块之间），层级感一致。
     Surface(
         Modifier.size(56.dp),
-        shape = CircleShape,
+        shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) { Box(contentAlignment = Alignment.Center) { Icon(icon, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) } }
     Spacer(Modifier.height(14.dp))
