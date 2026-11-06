@@ -528,15 +528,15 @@ fun LabelButton(
                     }
                 }
             }
-            Field("API Endpoint（选填）", endpoint) { endpoint = it }
-            normalized?.let { r ->
-                if (r.note.isNotEmpty()) Text(
-                    r.note,
-                    Modifier.padding(start = 4.dp, bottom = 4.dp),
-                    fontSize = 11.sp, lineHeight = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            // 端点纠正提示并入输入框的 supportingText：跟着字段走，不再是一条孤立灰字。
+            AivoraField(
+                label = "API Endpoint（选填）",
+                value = endpoint,
+                onValueChange = { endpoint = it },
+                placeholder = "https://api.example.com/v1",
+                supportingText = normalized?.note?.takeIf { it.isNotEmpty() },
+                modifier = Modifier.padding(vertical = 5.dp),
+            )
             AivoraField(
                 label = "API Key（选填）",
                 value = key,
