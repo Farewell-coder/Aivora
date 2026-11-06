@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.AnnotatedString
@@ -509,10 +510,12 @@ fun LabelButton(
             Spacer(Modifier.height(10.dp))
             Field("配置名称", name) { name = it }
             ExposedDropdownMenuBox(expanded, { expanded = it }) {
-                OutlinedTextField(
-                    provider, {}, Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                AivoraField(
+                    label = "服务商模板",
+                    value = provider,
+                    onValueChange = {},
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
                     readOnly = true,
-                    label = { Text("服务商模板") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                 )
                 ExposedDropdownMenu(expanded, { expanded = false }) {
@@ -534,10 +537,11 @@ fun LabelButton(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            OutlinedTextField(
-                key, { key = it }, Modifier.fillMaxWidth(),
-                label = { Text("API Key（选填）") },
-                singleLine = true,
+            AivoraField(
+                label = "API Key（选填）",
+                value = key,
+                onValueChange = { key = it },
+                placeholder = "sk-…",
                 visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     Row {
@@ -567,7 +571,47 @@ fun LabelButton(
         }
     }
 }
-@Composable fun Field(label: String, value: String, change: (String) -> Unit) = OutlinedTextField(value, change, Modifier.fillMaxWidth().padding(vertical = 5.dp), label = { Text(label) }, singleLine = true)
+/**
+ * 全应用统一的输入框。
+ *
+ * 只用 label（Material3 的浮动标签）：未输入时贴在框内，聚焦或有内容后缩到框上方并常驻，
+ * 不会出现「内容一填进去提示就消失」的情况。placeholder 只作为聚焦后的补充说明。
+ */
+@Composable
+fun AivoraField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
+    singleLine: Boolean = true,
+    readOnly: Boolean = false,
+    isError: Boolean = false,
+    supportingText: String? = null,
+    shape: Shape = Tokens.InnerShape,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth(),
+        readOnly = readOnly,
+        label = { Text(label) },
+        placeholder = if (placeholder != null) { { Text(placeholder) } } else null,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        supportingText = if (supportingText != null) { { Text(supportingText) } } else null,
+        isError = isError,
+        visualTransformation = visualTransformation,
+        singleLine = singleLine,
+        shape = shape,
+    )
+}
+
+@Composable fun Field(label: String, value: String, change: (String) -> Unit) =
+    AivoraField(label, value, change, Modifier.padding(vertical = 5.dp))
 @Composable fun DiagnosticsPage(configs: List<ServiceConfig>, repo: VaultRepository, appVersion: String, toast: (String) -> Unit) {
     val scope = rememberCoroutineScope(); val checker = remember(appVersion) { KeyDiagnostics(appVersion) }; var job by remember { mutableStateOf<Job?>(null) }; var currentId by remember { mutableStateOf<Long?>(null) }; var results by remember { mutableStateOf(mapOf<Long, List<ModelResult>>()) }; var expanded by remember { mutableStateOf(setOf<Long>()) }
     LaunchedEffect(configs) { if (job?.isActive != true) results = configs.associate { it.id to try { Json.decodeFromString<List<ModelResult>>(it.modelResultsJson) } catch (_: Exception) { emptyList() } } }
@@ -669,7 +713,7 @@ fun LabelButton(
         Text("备份包含全部配置、检测结果和外观设置。导入会覆盖当前全部数据。", Modifier.padding(top = 10.dp), fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     exportResult?.let { result -> AlertDialog({ exportResult = null }, title = { Text("导出全量备份") }, text = { Column { Text("请保存备份凭证。恢复时必须输入相同凭证。"); SelectionContainer { Text(result.credential, Modifier.padding(vertical = 14.dp), style = MaterialTheme.typography.bodySmall) }; LabelButton({ clipboard.setText(AnnotatedString(result.credential)); Toast.makeText(context, "备份凭证已复制", Toast.LENGTH_SHORT).show() }, Lucide.Copy, "复制凭证") } }, confirmButton = { Button({ saver.launch("Aivora-全量备份-${System.currentTimeMillis()}${Backup.EXTENSION}") }) { Text("选择保存位置") } }, dismissButton = { TextButton({ exportResult = null }) { Text("取消") } }) }
-    importUri?.let { uri -> AlertDialog({ importUri = null }, title = { Text("输入备份凭证") }, text = { OutlinedTextField(credential, { credential = it }, Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation(), label = { Text("备份凭证") }, singleLine = true) }, confirmButton = { Button({ scope.launch { busy = true; try { val data = withContext(Dispatchers.IO) { Backup.import(context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("文件读取失败"), credential) }; pending = data; importUri = null } catch (e: Exception) { toast(e.message ?: "备份无效") }; busy = false } }, enabled = !busy) { Text("验证备份") } }, dismissButton = { TextButton({ importUri = null }) { Text("取消") } }) }
+    importUri?.let { uri -> AlertDialog({ importUri = null }, title = { Text("输入备份凭证") }, text = { AivoraField("备份凭证", credential, { credential = it }, visualTransformation = PasswordVisualTransformation()) }, confirmButton = { Button({ scope.launch { busy = true; try { val data = withContext(Dispatchers.IO) { Backup.import(context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("文件读取失败"), credential) }; pending = data; importUri = null } catch (e: Exception) { toast(e.message ?: "备份无效") }; busy = false } }, enabled = !busy) { Text("验证备份") } }, dismissButton = { TextButton({ importUri = null }) { Text("取消") } }) }
     pending?.let { data -> AlertDialog({ pending = null }, title = { Text("覆盖当前全部数据？") }, text = { Text("备份包含 ${data.configs.size} 个配置。恢复后当前配置、检测结果和外观设置将被替换，此操作无法撤销。") }, confirmButton = { Button({ scope.launch { try { repo.replaceAll(data, prefs); themeChange(ThemeMode.valueOf(data.theme)); pending = null; toast("全量数据恢复成功") } catch (e: Exception) { toast(e.message ?: "恢复失败") } } }) { Text("确认覆盖恢复") } }, dismissButton = { TextButton({ pending = null }) { Text("取消") } }) }
 }
 @Composable fun AboutPage(protocol: () -> Unit) {

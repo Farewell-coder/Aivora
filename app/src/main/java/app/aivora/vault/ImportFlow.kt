@@ -233,14 +233,13 @@ fun CredentialDialog(
             Column {
                 Text(fileName, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp)
                 Spacer(Modifier.height(10.dp))
-                OutlinedTextField(
-                    credential,
-                    { credential = it },
-                    Modifier.fillMaxWidth(),
-                    label = { Text("导出凭证") },
-                    singleLine = true,
+                AivoraField(
+                    label = "导出凭证",
+                    value = credential,
+                    onValueChange = { credential = it },
+                    placeholder = "粘贴 52 位凭证",
                     visualTransformation = PasswordVisualTransformation(),
-                    isError = error.isNotEmpty()
+                    isError = error.isNotEmpty(),
                 )
                 if (error.isNotEmpty()) {
                     Spacer(Modifier.height(6.dp))

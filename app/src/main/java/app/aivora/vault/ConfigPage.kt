@@ -115,16 +115,18 @@ fun ConfigPage(
                 )
             }
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                search, { search = it }, Modifier.fillMaxWidth(),
+            AivoraField(
+                label = "搜索配置",
+                value = search,
+                onValueChange = { search = it },
+                placeholder = "名称、服务商或 Endpoint",
+                shape = CircleShape,
                 leadingIcon = { Icon(Lucide.Search, null) },
                 trailingIcon = {
                     if (search.isNotEmpty()) {
                         IconButton({ search = "" }) { Icon(Lucide.X, "清除搜索") }
                     }
                 },
-                placeholder = { Text("搜索名称、服务商或 Endpoint") },
-                singleLine = true, shape = CircleShape
             )
             if (search.isNotEmpty()) {
                 Text(
