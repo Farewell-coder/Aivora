@@ -114,7 +114,7 @@ fun AivoraTopBar(
                     .background(c.accentContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("A", AivoraType.bodyStrong, color = c.onAccentContainer)
+                Text("A", style = AivoraType.bodyStrong, color = c.onAccentContainer)
             }
             Spacer(Modifier.width(AivoraSpace.md))
         }
@@ -175,9 +175,15 @@ val LocalSelectedTab = staticCompositionLocalOf { Tab.Configs }
 /** 切换 Tab 的回调。 */
 val LocalTabSelect = staticCompositionLocalOf<(Tab) -> Unit> { {} }
 
-/** 底栏内容：四个 Tab 等宽，中心间距严格一致。 */
+/**
+ * 底栏内容：四个 Tab 等宽，中心间距严格一致。
+ *
+ * 必须是 `RowScope` 的扩展：`Modifier.weight(1f)` 只在该作用域内可用。
+ * 早期写成普通 Composable，在 forEach 的 lambda 里 loss 了作用域，
+ * 编译报 `Unresolved reference 'weight'`。
+ */
 @Composable
-private fun BottomBarContent() {
+private fun RowScope.BottomBarContent() {
     val c = AivoraThemeColors.colors
     val entries = listOf(
         Tab.Configs to Lucide.List,
@@ -207,7 +213,7 @@ private fun BottomBarContent() {
             Icon(icon, tab.title, Modifier.size(22.dp), tint = tint)
             Spacer(Modifier.height(3.dp))
             // 单行、不设行高：标签高度由内边距决定，设了 lineHeight 反而把字形顶偏。
-            Text(tab.title, AivoraType.label, color = tint, maxLines = 1)
+            Text(tab.title, style = AivoraType.label, color = tint, maxLines = 1)
         }
     }
 }

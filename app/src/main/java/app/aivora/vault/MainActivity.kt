@@ -194,11 +194,10 @@ private fun LockScreen(auth: () -> Unit) {
                 Icon(Lucide.Lock, null, Modifier.size(28.dp), tint = c.accent)
             }
             Spacer(Modifier.height(AivoraSpace.lg))
-            Text("Aivora 已锁定", AivoraType.pageTitle, color = c.text)
+            Text("Aivora 已锁定", style = AivoraType.pageTitle, color = c.text)
             Spacer(Modifier.height(AivoraSpace.xs))
             Text(
-                "配置已加密保存，验证身份后才能查看",
-                AivoraType.meta,
+                "配置已加密保存，验证身份后才能查看", style = AivoraType.meta,
                 color = c.textSecondary,
             )
             Spacer(Modifier.height(AivoraSpace.xxl))
@@ -435,7 +434,7 @@ private fun BackupSection(
     exportResult?.let { result ->
         AlertDialog(
             onDismissRequest = { exportResult = null },
-            title = { Text("导出全量备份", AivoraType.section, color = AivoraThemeColors.colors.text) },
+            title = { Text("导出全量备份", style = AivoraType.section, color = AivoraThemeColors.colors.text) },
             text = {
                 Column {
                     HintText("请保存备份凭证。恢复时必须输入相同凭证，丢失后无法恢复。")
@@ -451,11 +450,19 @@ private fun BackupSection(
                 }
             },
             confirmButton = {
-                PrimaryButton("选择保存位置") {
-                    saver.launch("Aivora-全量备份-${System.currentTimeMillis()}${Backup.EXTENSION}")
-                }
+                PrimaryButton(
+                    text = "选择保存位置",
+                    onClick = {
+                        saver.launch("Aivora-全量备份-${System.currentTimeMillis()}${Backup.EXTENSION}")
+                    },
+                )
             },
-            dismissButton = { TextAction("取消") { exportResult = null } },
+            dismissButton = {
+                TextAction(
+                    text = "取消",
+                    onClick = { exportResult = null },
+                )
+            },
             containerColor = AivoraThemeColors.colors.surface,
             shape = AivoraShape.block,
         )
@@ -465,7 +472,7 @@ private fun BackupSection(
     importUri?.let { uri ->
         AlertDialog(
             onDismissRequest = { importUri = null },
-            title = { Text("输入备份凭证", AivoraType.section, color = AivoraThemeColors.colors.text) },
+            title = { Text("输入备份凭证", style = AivoraType.section, color = AivoraThemeColors.colors.text) },
             text = {
                 AivoraField(
                     label = "备份凭证",
@@ -475,21 +482,37 @@ private fun BackupSection(
                 )
             },
             confirmButton = {
-                PrimaryButton("验证备份", loading = busy, enabled = !busy) {
-                    scope.launch {
-                        busy = true
-                        try {
-                            val data = withContext(Dispatchers.IO) {
-                                Backup.import(context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("文件读取失败"), credential)
+                PrimaryButton(
+                    text = "验证备份",
+                    loading = busy,
+                    enabled = !busy,
+                    onClick = {
+                        scope.launch {
+                            busy = true
+                            try {
+                                val data = withContext(Dispatchers.IO) {
+                                    Backup.import(
+                                        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                            ?: error("文件读取失败"),
+                                        credential,
+                                    )
+                                }
+                                pending = data
+                                importUri = null
+                            } catch (e: Exception) {
+                                toast(e.message ?: "备份无效")
                             }
-                            pending = data
-                            importUri = null
-                        } catch (e: Exception) { toast(e.message ?: "备份无效") }
-                        busy = false
-                    }
-                }
+                            busy = false
+                        }
+                    },
+                )
             },
-            dismissButton = { TextAction("取消") { importUri = null } },
+            dismissButton = {
+                TextAction(
+                    text = "取消",
+                    onClick = { importUri = null },
+                )
+            },
             containerColor = AivoraThemeColors.colors.surface,
             shape = AivoraShape.block,
         )
@@ -526,9 +549,9 @@ fun AboutPage(protocol: () -> Unit) {
         Spacer(Modifier.height(AivoraSpace.sm))
         SectionBlock {
             Column(Modifier.padding(AivoraSpace.blockPadding)) {
-                Text("Aivora", AivoraType.pageTitle, color = c.text)
+                Text("Aivora", style = AivoraType.pageTitle, color = c.text)
                 Spacer(Modifier.height(AivoraSpace.xs))
-                Text("本地 AI 配置管理工具", AivoraType.body, color = c.textSecondary)
+                Text("本地 AI 配置管理工具", style = AivoraType.body, color = c.textSecondary)
                 Spacer(Modifier.height(AivoraSpace.md))
                 DataRow("版本", packageVersion(LocalContext.current), mono = true)
                 DataRow("协议", "AEX 1.1", mono = true)
@@ -567,9 +590,9 @@ fun ProtocolPage() {
         Spacer(Modifier.height(AivoraSpace.sm))
         SectionBlock {
             Column(Modifier.padding(AivoraSpace.blockPadding)) {
-                Text("AEX 1.1", AivoraType.pageTitle, color = c.text)
+                Text("AEX 1.1", style = AivoraType.pageTitle, color = c.text)
                 Spacer(Modifier.height(AivoraSpace.xs))
-                Text("Aivora Exchange Protocol 是开放的配置交换协议，版本与加密方案独立演进。", AivoraType.body, color = c.textSecondary)
+                Text("Aivora Exchange Protocol 是开放的配置交换协议，版本与加密方案独立演进。", style = AivoraType.body, color = c.textSecondary)
             }
         }
 
@@ -591,17 +614,17 @@ fun ProtocolPage() {
         SectionBlock {
             Box(Modifier.padding(AivoraSpace.blockPadding)) {
                 Column {
-                    Text("导出", AivoraType.bodyStrong, color = c.text)
+                    Text("导出", style = AivoraType.bodyStrong, color = c.text)
                     Spacer(Modifier.height(AivoraSpace.xs))
-                    Text("可把单个或多个配置加密为 .akcp 文件；凭证单独展示、单独传递，不随文件发出。", AivoraType.body, color = c.textSecondary)
+                    Text("可把单个或多个配置加密为 .akcp 文件；凭证单独展示、单独传递，不随文件发出。", style = AivoraType.body, color = c.textSecondary)
                     Spacer(Modifier.height(AivoraSpace.md))
-                    Text("导入", AivoraType.bodyStrong, color = c.text)
+                    Text("导入", style = AivoraType.bodyStrong, color = c.text)
                     Spacer(Modifier.height(AivoraSpace.xs))
-                    Text("选择文件后自动识别格式，加密文件需输入凭证；凭证错误、文件被修改时不写入任何配置。", AivoraType.body, color = c.textSecondary)
+                    Text("选择文件后自动识别格式，加密文件需输入凭证；凭证错误、文件被修改时不写入任何配置。", style = AivoraType.body, color = c.textSecondary)
                     Spacer(Modifier.height(AivoraSpace.md))
-                    Text("第三方格式", AivoraType.bodyStrong, color = c.text)
+                    Text("第三方格式", style = AivoraType.bodyStrong, color = c.text)
                     Spacer(Modifier.height(AivoraSpace.xs))
-                    Text("Chatbox、Continue、LobeChat、CC Switch、New API、Cherry Studio、.env 按各自规则明文解析，无需凭证。", AivoraType.body, color = c.textSecondary)
+                    Text("Chatbox、Continue、LobeChat、CC Switch、New API、Cherry Studio、.env 按各自规则明文解析，无需凭证。", style = AivoraType.body, color = c.textSecondary)
                 }
             }
             ItemDivider()

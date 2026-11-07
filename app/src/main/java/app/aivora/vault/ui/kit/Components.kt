@@ -108,7 +108,7 @@ fun BlockHeader(
             Icon(icon, null, Modifier.size(18.dp), tint = c.textSecondary)
             Spacer(Modifier.width(AivoraSpace.sm))
         }
-        Text(title, AivoraType.section, color = c.text, modifier = Modifier.weight(1f))
+        Text(title, style = AivoraType.section, color = c.text, modifier = Modifier.weight(1f))
         trailing?.invoke(this)
     }
 }
@@ -350,7 +350,7 @@ fun TechWell(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SelectionContainer(Modifier.weight(1f)) {
-                    Text(value, AivoraType.mono, color = c.text)
+                    Text(value, style = AivoraType.mono, color = c.text)
                 }
                 if (onCopy != null) {
                     Spacer(Modifier.width(AivoraSpace.sm))
@@ -396,7 +396,7 @@ fun HintText(text: String, modifier: Modifier = Modifier) {
 fun DangerHint(text: String, modifier: Modifier = Modifier) {
     val c = AivoraThemeColors.colors
     SubtlePanel(modifier, color = c.dangerContainer) {
-        Text(text, AivoraType.meta, color = c.onDangerContainer)
+        Text(text, style = AivoraType.meta, color = c.onDangerContainer)
     }
 }
 
@@ -405,7 +405,7 @@ fun DangerHint(text: String, modifier: Modifier = Modifier) {
 fun WarningHint(text: String, modifier: Modifier = Modifier) {
     val c = AivoraThemeColors.colors
     SubtlePanel(modifier, color = c.warningContainer) {
-        Text(text, AivoraType.meta, color = c.onWarningContainer)
+        Text(text, style = AivoraType.meta, color = c.onWarningContainer)
     }
 }
 
@@ -438,12 +438,12 @@ fun EmptyState(
             Icon(icon, null, Modifier.size(24.dp), tint = c.textTertiary)
         }
         Spacer(Modifier.height(AivoraSpace.md))
-        Text(title, AivoraType.bodyStrong, color = c.text, textAlign = TextAlign.Center)
+        Text(title, style = AivoraType.bodyStrong, color = c.text, textAlign = TextAlign.Center)
         if (hint != null) {
             Spacer(Modifier.height(AivoraSpace.xs))
             Text(
                 hint,
-                AivoraType.meta,
+                style = AivoraType.meta,
                 color = c.textSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = AivoraSpace.lg),
@@ -467,7 +467,7 @@ fun LoadingBlock(text: String, modifier: Modifier = Modifier) {
     ) {
         CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = c.accent)
         Spacer(Modifier.width(AivoraSpace.sm))
-        Text(text, AivoraType.meta, color = c.textSecondary)
+        Text(text, style = AivoraType.meta, color = c.textSecondary)
     }
 }
 

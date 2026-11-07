@@ -102,7 +102,7 @@ fun AivoraField(
         placeholder = placeholder?.let { { Text(it) } },
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
-        supportingText = supportingText?.let { { Text(it, AivoraType.meta) } },
+        supportingText = supportingText?.let { { Text(it, style = AivoraType.meta) } },
         isError = isError,
         visualTransformation = visualTransformation,
         singleLine = singleLine,
@@ -165,7 +165,7 @@ fun PrimaryButton(
             Icon(icon, null, Modifier.size(AivoraSize.iconButton), tint = fg)
             Spacer(Modifier.width(AivoraSpace.xs + 2.dp))
         }
-        Text(text, AivoraType.bodyStrong, color = fg, maxLines = 1)
+        Text(text, style = AivoraType.bodyStrong, color = fg, maxLines = 1)
     }
 }
 
@@ -214,7 +214,7 @@ fun SecondaryButton(
             Icon(icon, null, Modifier.size(AivoraSize.iconButton), tint = fg)
             Spacer(Modifier.width(AivoraSpace.xs + 2.dp))
         }
-        Text(text, AivoraType.bodyStrong, color = fg, maxLines = 1)
+        Text(text, style = AivoraType.bodyStrong, color = fg, maxLines = 1)
     }
 }
 
@@ -244,7 +244,7 @@ fun TextAction(
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = AivoraSpace.md, vertical = AivoraSpace.xs + 2.dp),
         contentAlignment = Alignment.Center,
-    ) { Text(text, AivoraType.bodyStrong, color = color, maxLines = 1) }
+    ) { Text(text, style = AivoraType.bodyStrong, color = color, maxLines = 1) }
 }
 
 /** 图标按钮：触控区 44，视觉 20。 */
@@ -297,10 +297,10 @@ fun SettingRow(
             Spacer(Modifier.width(AivoraSpace.md))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, AivoraType.bodyStrong, color = c.text)
+            Text(title, style = AivoraType.bodyStrong, color = c.text)
             if (description != null) {
                 Spacer(Modifier.height(2.dp))
-                Text(description, AivoraType.meta, color = c.textSecondary)
+                Text(description, style = AivoraType.meta, color = c.textSecondary)
             }
         }
         if (trailing != null) {
@@ -350,10 +350,10 @@ fun RadioRow(
             Spacer(Modifier.width(AivoraSpace.md))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, AivoraType.body, color = c.text)
+            Text(title, style = AivoraType.body, color = c.text)
             if (description != null) {
                 Spacer(Modifier.height(2.dp))
-                Text(description, AivoraType.meta, color = c.textSecondary)
+                Text(description, style = AivoraType.meta, color = c.textSecondary)
             }
         }
         RadioButton(selected = selected, onClick = onSelect)
@@ -380,10 +380,10 @@ fun NavigationRow(
             Spacer(Modifier.width(AivoraSpace.md))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, AivoraType.bodyStrong, color = c.text)
+            Text(title, style = AivoraType.bodyStrong, color = c.text)
             if (description != null) {
                 Spacer(Modifier.height(2.dp))
-                Text(description, AivoraType.meta, color = c.textSecondary)
+                Text(description, style = AivoraType.meta, color = c.textSecondary)
             }
         }
         Icon(Lucide.ChevronRight, null, Modifier.size(18.dp), tint = c.textTertiary)
@@ -481,8 +481,8 @@ fun ConfirmDialog(
     val c = AivoraThemeColors.colors
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, AivoraType.section, color = c.text) },
-        text = { Text(text, AivoraType.body, color = c.textSecondary) },
+        title = { Text(title, style = AivoraType.section, color = c.text) },
+        text = { Text(text, style = AivoraType.body, color = c.textSecondary) },
         confirmButton = {
             TextAction(
                 confirmText,
