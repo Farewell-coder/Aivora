@@ -50,7 +50,7 @@ If you use several AI services, your endpoints and API keys usually end up scatt
 | Export history | Every export is recorded with its full snapshot and credential; view, copy, re-export, re-share, or long-press to bulk delete |
 | Endpoint correction | Adds a missing `/v1` and strips duplicated API suffixes; official template URLs are left untouched, and candidate paths are retried when diagnostics fail |
 | Full backup | Aivora-specific encrypted backup; cross-device restore re-encrypts secrets with the new device key after an overwrite confirmation |
-| Interface | Material 3, light / dark / system theme, optional system authentication |
+| Interface | In-house design system (tokens + component layer): semantic status badges, monospaced technical data, light / dark / system themes, optional system authentication |
 
 ### Design principles
 
