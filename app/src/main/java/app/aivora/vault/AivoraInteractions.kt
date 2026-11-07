@@ -29,6 +29,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import app.aivora.vault.ui.theme.AivoraShape
 
 /**
  * 全局交互原语。
@@ -83,7 +84,7 @@ fun Modifier.pressScale(
 fun Modifier.tappable(
     onClick: () -> Unit,
     enabled: Boolean = true,
-    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
+    shape: RoundedCornerShape = AivoraShape.chip,
     haptic: Boolean = false,
 ): Modifier {
     val haptics = rememberHaptics()

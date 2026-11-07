@@ -7,6 +7,10 @@
       此前是 #7466DC（旧图标的紫色底），配新前景会露出紫边，已改掉。
     -->
     <color name="icon_background">#FFFFFF</color>
-    <!-- 浅色主题背景，与 Kotlin 侧 lightColorScheme(background = 0xFFFEF7FF) 保持一致 -->
-    <color name="background_light">#FEF7FF</color>
+    <!--
+      启动窗口背景 / 浅色主题页面底色。
+      必须与 Kotlin 侧 ui.theme.AivoraLightColors.background（#F6F7F9）逐位一致，
+      否则冷启动会从一种灰闪到另一种灰。
+    -->
+    <color name="background_light">#F6F7F9</color>
 </resources>

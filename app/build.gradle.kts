@@ -14,9 +14,9 @@ android {
         applicationId = "app.aivora.vault"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
+        versionCode = 13
         ndk { abiFilters += "arm64-v8a" }
-        versionName = "0.1.2"
+        versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     // 【签名配置】读 keystore.properties（不入版本库，见 .gitignore）。
