@@ -1,7 +1,9 @@
 package app.aivora.vault.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import kotlin.math.roundToInt
 import org.junit.Test
 
 /**
@@ -155,17 +157,23 @@ class ContrastTest {
         assertTrue("深色底必须是近黑而不是纯黑", dark.background.red > 0.02f || dark.background.green > 0.02f || dark.background.blue > 0.02f)
     }
 
+    /**
+     * 启动窗口底色必须与应用内背景一致，否则冷启动会闪一下。
+     *
+     * 比对的是 RGB 三个分量，而不是 `Color.value` 的 ULong 位模式 ——
+     * `value` 的通道顺序与 `0xAARRGGBB` 字面量不同，直接比字面量会得到假失败，
+     * 那种断言即使字面量写错也可能「碰巧通过」，验证不了意图。
+     *
+     * 对应资源：`values/colors.xml` → #F6F7F9，`values-night/colors.xml` → #0F1115
+     */
     @Test
     fun backgroundMatchesLaunchWindowColor() {
-        // 启动窗口的 windowBackground 必须与 Kotlin 侧 background 一致，否则冷启动会闪。
-        // values/colors.xml: #F6F7F9 ；values-night/colors.xml: #0F1115
-        assertTrue(
-            "浅色 background 应为 #F6F7F9（与 values/colors.xml 一致）",
-            AivoraLightColors.background.value == 0xFFF6F7F9uL,
+        fun rgb(c: Color): Triple<Int, Int, Int> = Triple(
+            (c.red * 255f).roundToInt(),
+            (c.green * 255f).roundToInt(),
+            (c.blue * 255f).roundToInt(),
         )
-        assertTrue(
-            "深色 background 应为 #0F1115（与 values-night/colors.xml 一致）",
-            AivoraDarkColors.background.value == 0xFF0F1115uL,
-        )
+        assertEquals("浅色 background 应为 #F6F7F9（与 values/colors.xml 一致）", Triple(0xF6, 0xF7, 0xF9), rgb(AivoraLightColors.background))
+        assertEquals("深色 background 应为 #0F1115（与 values-night/colors.xml 一致）", Triple(0x0F, 0x11, 0x15), rgb(AivoraDarkColors.background))
     }
 }
