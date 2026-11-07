@@ -1,0 +1,31 @@
+# 【临时】只用于产出 debug 变体 APK 做真机全页面走查，验证完即删除。
+name: verify-apk
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ tmp/device-verify ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+      - run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - run: chmod +x ./gradlew
+      - run: ./gradlew assembleDebug --stacktrace -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+      - run: ls -lh app/build/outputs/apk/debug/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aivora-debug-vfy
+          path: app/build/outputs/apk/debug/*.apk
