@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.aivora.vault.Lucide
 import app.aivora.vault.Tab
@@ -213,7 +214,7 @@ private fun RowScope.BottomBarContent() {
             Icon(icon, tab.title, Modifier.size(22.dp), tint = tint)
             Spacer(Modifier.height(3.dp))
             // 单行、不设行高：标签高度由内边距决定，设了 lineHeight 反而把字形顶偏。
-            Text(tab.title, style = AivoraType.label, color = tint, maxLines = 1)
+            Text(tab.title, style = AivoraType.label, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

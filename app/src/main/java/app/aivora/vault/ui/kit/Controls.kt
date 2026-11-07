@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -40,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -165,7 +167,7 @@ fun PrimaryButton(
             Icon(icon, null, Modifier.size(AivoraSize.iconButton), tint = fg)
             Spacer(Modifier.width(AivoraSpace.xs + 2.dp))
         }
-        Text(text, style = AivoraType.bodyStrong, color = fg, maxLines = 1)
+        Text(text, style = AivoraType.bodyStrong, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -214,7 +216,7 @@ fun SecondaryButton(
             Icon(icon, null, Modifier.size(AivoraSize.iconButton), tint = fg)
             Spacer(Modifier.width(AivoraSpace.xs + 2.dp))
         }
-        Text(text, style = AivoraType.bodyStrong, color = fg, maxLines = 1)
+        Text(text, style = AivoraType.bodyStrong, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -244,7 +246,7 @@ fun TextAction(
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = AivoraSpace.md, vertical = AivoraSpace.xs + 2.dp),
         contentAlignment = Alignment.Center,
-    ) { Text(text, style = AivoraType.bodyStrong, color = color, maxLines = 1) }
+    ) { Text(text, style = AivoraType.bodyStrong, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
 
 /** 图标按钮：触控区 44，视觉 20。 */
@@ -297,9 +299,16 @@ fun SettingRow(
             Spacer(Modifier.width(AivoraSpace.md))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, style = AivoraType.bodyStrong, color = c.text)
+            Text(
+                title,
+                style = AivoraType.bodyStrong,
+                color = c.text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (description != null) {
                 Spacer(Modifier.height(2.dp))
+                // 说明是解释性长文本，允许换行；不设 maxLines 上限，让它自然折行而不是被裁。
                 Text(description, style = AivoraType.meta, color = c.textSecondary)
             }
         }
@@ -350,7 +359,13 @@ fun RadioRow(
             Spacer(Modifier.width(AivoraSpace.md))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, style = AivoraType.body, color = c.text)
+            Text(
+                title,
+                style = AivoraType.body,
+                color = c.text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (description != null) {
                 Spacer(Modifier.height(2.dp))
                 Text(description, style = AivoraType.meta, color = c.textSecondary)
@@ -380,7 +395,13 @@ fun NavigationRow(
             Spacer(Modifier.width(AivoraSpace.md))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, style = AivoraType.bodyStrong, color = c.text)
+            Text(
+                title,
+                style = AivoraType.bodyStrong,
+                color = c.text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (description != null) {
                 Spacer(Modifier.height(2.dp))
                 Text(description, style = AivoraType.meta, color = c.textSecondary)
@@ -423,13 +444,24 @@ fun ExpandableBlock(
                 Icon(icon, null, Modifier.size(18.dp), tint = c.textSecondary)
                 Spacer(Modifier.width(AivoraSpace.md))
             }
-            Text(title, Modifier.weight(1f), style = AivoraType.section, color = c.text)
+            Text(
+                title,
+                Modifier.weight(1f),
+                style = AivoraType.section,
+                color = c.text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (subtitle != null) {
+                // 副标题（如「已开启」「跟随系统」）在行尾参与横向竞争：
+                // 不限宽时标题与副标题会互相挤压，副标题被挤出容器。
                 Text(
                     subtitle,
-                    Modifier.padding(end = AivoraSpace.sm),
+                    Modifier.padding(end = AivoraSpace.sm).widthIn(max = 120.dp),
                     style = AivoraType.meta,
                     color = c.textTertiary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Icon(

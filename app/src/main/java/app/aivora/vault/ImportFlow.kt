@@ -6,6 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -163,7 +166,7 @@ object ImportFlow {
  * 旧的 `Column + verticalScroll + forEach` 会一次性组合全部条目；现在用惰性列表，
  * 并且每条只有「名称 / Endpoint / 来源 / 是否含密钥」四件事，一眼能扫完。
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ImportPreviewDialog(
     candidates: List<ThirdParty.Candidate>,
@@ -284,7 +287,14 @@ private fun CandidateCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(AivoraSpace.sm))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // 【横向溢出】来源名最长有 13 字符（「Cherry Studio」），再并上「含密钥」徽标
+                //   与「N 个模型」，在窄屏上这一行会被撑爆、右侧内容被裁掉。
+                //   改用 FlowRow 自动折行：放不下时徽标换到下一行，而不是挤压或被截断。
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(AivoraSpace.sm),
+                    verticalArrangement = Arrangement.spacedBy(AivoraSpace.xs),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
                     // 来源 chip：用强调容器色，明确「这条是从哪个软件解析出来的」。
                     Box(
                         Modifier
@@ -292,20 +302,26 @@ private fun CandidateCard(
                             .background(c.accentContainer)
                             .padding(horizontal = AivoraSpace.sm, vertical = AivoraSpace.hair),
                     ) {
-                        Text(candidate.source, style = AivoraType.label, color = c.onAccentContainer)
+                        Text(
+                            candidate.source,
+                            style = AivoraType.label,
+                            color = c.onAccentContainer,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 160.dp),
+                        )
                     }
-                    Spacer(Modifier.width(AivoraSpace.sm))
                     // 含密钥是风险信息（导入后立即接触明文 Key），用 Warning；无密钥用 Neutral。
                     StatusBadge(
                         kind = if (candidate.apiKey.isBlank()) StatusKind.Neutral else StatusKind.Warning,
                         text = if (candidate.apiKey.isBlank()) "无密钥" else "含密钥",
                     )
-                    Spacer(Modifier.weight(1f))
                     if (candidate.models.isNotEmpty()) {
                         Text(
                             "${candidate.models.size} 个模型",
                             style = AivoraType.monoSmall,
                             color = c.textTertiary,
+                            maxLines = 1,
                         )
                     }
                 }

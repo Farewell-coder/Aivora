@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.CircularProgressIndicator
@@ -108,7 +109,14 @@ fun BlockHeader(
             Icon(icon, null, Modifier.size(18.dp), tint = c.textSecondary)
             Spacer(Modifier.width(AivoraSpace.sm))
         }
-        Text(title, style = AivoraType.section, color = c.text, modifier = Modifier.weight(1f))
+        Text(
+            title,
+            style = AivoraType.section,
+            color = c.text,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         trailing?.invoke(this)
     }
 }
@@ -268,7 +276,7 @@ fun StatusBadge(
                     .then(if (filled) Modifier.background(fg) else Modifier.border(1.dp, fg, AivoraShape.pill)),
             )
             Spacer(Modifier.width(5.dp))
-            Text(text, style = AivoraType.label, color = kind.onContainer(), maxLines = 1)
+            Text(text, style = AivoraType.label, color = kind.onContainer(), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -293,11 +301,16 @@ fun DataRow(
 ) {
     val c = AivoraThemeColors.colors
     Row(modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {
+        // 【标签宽度】原先固定 88dp：中文标签最长 6 字（如「密钥派生」）约需 78dp 勉强放得下，
+        //   但「文件与加密」「第三方格式」这类 5 字以上或带英文的标签会**溢出到数值列上**。
+        //   改为按内容自适应、上限 120dp，超长时省略，数值列始终有权重分配剩余宽度。
         Text(
             label,
-            Modifier.width(88.dp),
+            Modifier.widthIn(max = 120.dp),
             style = AivoraType.meta,
             color = c.textTertiary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
         SelectionContainer(Modifier.weight(1f)) {
             Text(

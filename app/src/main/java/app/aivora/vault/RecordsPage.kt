@@ -309,7 +309,14 @@ private fun RecordRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(AivoraSpace.hair))
-            Text(meta, style = AivoraType.meta, color = c.textTertiary)
+            // 元信息是「N 个配置 · 时间」，单行语义；不设上限时窄屏会折行把整行撑高。
+            Text(
+                meta,
+                style = AivoraType.meta,
+                color = c.textTertiary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (names.isNotEmpty()) {
                 Spacer(Modifier.height(AivoraSpace.hair))
                 Text(
