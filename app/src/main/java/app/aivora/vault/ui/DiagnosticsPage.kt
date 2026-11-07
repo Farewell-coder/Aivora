@@ -37,6 +37,7 @@ import app.aivora.vault.data.VaultRepository
 import app.aivora.vault.ui.kit.DataRow
 import app.aivora.vault.ui.kit.EmptyState
 import app.aivora.vault.ui.kit.HintText
+import app.aivora.vault.ui.kit.foreground
 import app.aivora.vault.ui.kit.ItemDivider
 import app.aivora.vault.ui.kit.RowItem
 import app.aivora.vault.ui.kit.SecondaryButton

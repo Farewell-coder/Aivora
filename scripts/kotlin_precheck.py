@@ -188,6 +188,11 @@ LAZY_SCOPE_CALLS = {"items", "itemsIndexed", "stickyHeader"}
 # 常见「用了但没 import」的符号 → 需要的 import 前缀候选。
 # 只列会导致编译失败的强符号，避免误报拖累信噪比。
 SYMBOL_IMPORTS = {
+    # 项目内 ui.kit 的 @Composable 扩展函数：跨文件调用必须显式 import，
+    # 漏掉时 Kotlin 只在编译期报 Unresolved reference（CI 一轮 4 分钟才发现）。
+    "foreground": ["app.aivora.vault.ui.kit.foreground"],
+    "onContainer": ["app.aivora.vault.ui.kit.onContainer"],
+    "container": ["app.aivora.vault.ui.kit.container"],
     "LazyColumn": ["androidx.compose.foundation.lazy.LazyColumn"],
     "LazyRow": ["androidx.compose.foundation.lazy.LazyRow"],
     "rememberLazyListState": ["androidx.compose.foundation.lazy.rememberLazyListState"],
