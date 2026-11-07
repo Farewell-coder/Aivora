@@ -12,6 +12,8 @@ android {
     compileSdk = 35
     defaultConfig {
         applicationId = "app.aivora.vault"
+        // 【临时·仅用于设备验证】debug 变体换包名，与正式版并存安装，
+        //   以便在不受已有应用锁/数据影响的前提下走查全部页面。此改动不入库。
         minSdk = 26
         targetSdk = 35
         versionCode = 13
@@ -45,6 +47,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".vfy"
+            versionNameSuffix = "-vfy"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
