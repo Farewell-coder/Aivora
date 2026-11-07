@@ -7,10 +7,13 @@
 ```text
 偏移    长度    内容
 0       8       41 45 58 31 0D 0A 1A 0A      ← Magic "AEX1"
-8       4       00 00 00 A4                  ← 头部长度 H = 164（大端）
-12      H       {"cipher":"AES-256-GCM",...} ← UTF-8 JSON 头部（明文，仅协议参数）
+8       4       00 00 00 F7                  ← 头部长度 H = 247（大端）
+12      H       {"format":"aivora.exchange/1",...} ← 紧凑 JSON 头部（明文，仅协议参数）
 12+H    N       ...                          ← AES-256-GCM 密文（末尾 16 字节为标签）
 ```
+
+`H = 247` 是按下方第 2 节那 10 个字段、紧凑 JSON（无空格无换行）序列化得到的实际长度，
+与官方测试向量 `single.akcp` 的头部长度一致。字段值一变，`H` 随之变化。
 
 头部是**明文**的，但它不包含任何用户数据；它同时作为 AAD 参与认证，所以被改动一个字节就会导致解密失败。
 
@@ -38,7 +41,7 @@
 ## 3. 构造步骤
 
 ```text
-1. payloadBytes = RFC8785(payloadObject) 的 UTF-8 字节
+1. payloadBytes = 紧凑 JSON（无多余空白）的 UTF-8 字节；键序为插入序（非 RFC 8785 排序）
 2. salt   = random(16)
    nonce  = random(12)
 3. header = JSON 序列化（字段顺序固定）

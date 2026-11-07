@@ -95,10 +95,10 @@ Aivora 是一款**本地优先**的 Android AI 服务配置管理器。你可以
 
 ### 最新版本
 
-当前发布版本：**0.1.1**
+以发布页为准：[github.com/Farewell-coder/Aivora/releases/latest](https://github.com/Farewell-coder/Aivora/releases/latest)
 
-- 下载页面：[github.com/Farewell-coder/Aivora/releases/latest](https://github.com/Farewell-coder/Aivora/releases/latest)
-- 安装包命名：`Aivora-v0.1.1.apk`
+- 安装包命名：`Aivora-v<版本号>.apk`（版本号即 `versionName`）
+- 版本明细见 [更新记录](CHANGELOG.md)；本文不重复版本号，避免漏改。
 
 ### 安装说明
 
@@ -223,7 +223,7 @@ cd Aivora
 
 Aivora 采用 **AGPL-3.0-only**，详见 [LICENSE](LICENSE)。
 
-版本说明：应用版本与协议版本**独立演进**。当前为应用 0.0.8 · AEX 1.1（定稿）。
+版本说明：应用版本与协议版本**独立演进**。协议当前为 AEX 1.1（定稿）；应用版本见 [releases](https://github.com/Farewell-coder/Aivora/releases/latest)。
 
 - **协议版本规则**：主版本变化一律不兼容；次版本变化时，Aivora 的实现采用**精确匹配**，即 `protocolVersion` 必须等于它支持的那一个版本。1.1 移除了模型列表字段，因此 1.0 与 1.1 的容器互不通用。
 - **软件继续更新**：Aivora 的功能、界面、性能与缺陷修复会持续发布新版本，不需要协议跟着变。

@@ -6,6 +6,168 @@ What each release added, changed and fixed is recorded here, so the README does 
 
 ---
 
+## v0.1.2 · Unified input field, floating labels
+
+This release folds every input into a single component and switches to floating labels. **UI only — no changes to data structures, crypto parameters or the AEX protocol**, so it upgrades in place.
+
+### Floating labels
+
+Some fields previously had only a placeholder: once you typed something the hint vanished and you could no longer tell what the field was. They now use a floating label:
+
+- With no input, the label sits inside the field
+- On focus or when a value exists, the label shrinks and moves above the field, staying visible
+- The placeholder becomes supplementary help text rather than the only hint
+
+Covers every input: configuration name, provider template, API endpoint, API key, notes, backup credential, import credential and the search box.
+
+### Endpoint hint follows the field
+
+The grey endpoint-correction hint moved into the field's own supporting text, so it is bound to the field instead of floating loose above it.
+
+### Other
+
+- New shared input component, reused by future forms; radius and spacing come from the same tokens
+- Version 0.1.2 (versionCode 12)
+
+### Verification
+
+- CI build passes, unit tests unchanged
+- No schema changes; upgrading loses no data
+
+---
+
+## v0.1.1 · Straightening what was off
+
+The previous release swapped in Lucide's official geometry and added line heights. The direction was right, but three things were left untidy; this release cleans them up.
+
+### Bottom navigation: the four icons are finally evenly spaced
+
+The four labels differ in length — four characters for "Service configurations", two for "Settings". The pill width follows the label, and the old layout distributed gaps by each item's own width, so the **four icon centres were visibly uneven** and "Settings" sat narrow and off to the edge, making the whole row look shifted.
+
+Each item now gets an equal share, so centre spacing is identical.
+
+The navigation label line height is gone as well: a single line of text plus line height puts the extra space *below* the glyphs, pushing the label low inside the pill — exactly the problem the previous release introduced.
+
+### Empty states: no longer a lone perfect circle
+
+Surrounded by rounded rectangles, a 56dp perfect circle in the middle visually "pops out". It is now a **rounded square** of the same size (18dp radius, between the 20dp card and the 14dp inner block), which restores the hierarchy.
+
+Both empty-state icons are now 24dp; previously one was 26 and the other 24.
+
+### Single-line text back to the visual centre
+
+The "A" badge in the page header and the various single-line labels dropped their line height.
+
+**Line height only makes sense for multi-line text.** On a single line it does not improve legibility; it just shifts the glyphs down inside their container. Multi-line description text keeps its line height, which was correct.
+
+### A type scale, filled in along the way
+
+The previous release added line heights case by case, which fixed "cramped text" but not "two sizes on one page". Type sizes are now collected into six steps (22/18/15/14/13/12), mapped onto Material 3 semantic slots, with line height uniformly = size × 1.45. New code uses the slots instead of literals.
+
+### Version
+
+`0.1.1` (versionCode 11)
+
+---
+
+## v0.1.0 · Clearer to read, easier to use
+
+No functional changes. This release handles two long-standing annoyances: **text crammed together** and **icons that looked wrong**.
+
+### Icons: switched to Lucide's official geometry
+
+These were hand-drawn paths; some looked fine, others were visibly off:
+
+| Where | Before | After |
+|---|---|---|
+| Copy | A malformed box | Lucide `copy` |
+| Share | Actually an upload arrow | Lucide `share-2` (three linked nodes) |
+| Settings | Sliders | Lucide `settings` |
+| Lock | Rectangular outline | Lucide `lock` |
+
+The whole icon set now comes from the official Lucide library (`com.composables:icons-lucide-android`, 1521 icons, MIT), adding semantics that previously needed text: key, server, file in/out, deeplink, warning, success and refresh.
+
+**Adding a dependency has a cost, so here is why**: nobody can eyeball-check a hand-drawn path for correctness, and "nobody noticed it was copied wrong" is exactly how icon styles drift. With the official library, icon geometry is no longer ours to maintain.
+
+### Typography: line height at last
+
+Before the rework, `lineHeight` appeared **zero** times in the project. Font sizes were set in 54 places — all as inline `fontSize = 12.sp` — leaving line height to the font default. CJK multi-line copy needs more leading than a Latin default provides, so lines ended up touching.
+
+All 54 font sizes now carry a matching line height (size × 1.45), a practical range for CJK readability: 12sp with 18sp, 15sp with 22sp, 20sp with 29sp.
+
+### Removed an unexplained gap
+
+There was always a band of blank space under the list page title with no obvious source. The root cause was the status bar height being counted twice:
+
+- `Scaffold`'s `contentWindowInsets` already made room
+- A second `Spacer(windowInsetsTopHeight(statusBars))` was added below it
+
+The latter is gone. The first screen now shows one more row.
+
+### Lists no longer jump
+
+The configuration list and export history gained `animateItem()`, so items make room smoothly on create, delete and filter instead of the whole column snapping at once.
+
+### Other
+
+- Header height changed from a hard 54dp to a minimum, so the title is no longer clipped at larger system font sizes
+- Version `0.1.0` (versionCode 10)
+
+---
+
+## v0.0.9 · Interaction rework
+
+UI and interaction only — **no changes to data structures, crypto parameters or the AEX protocol**: configurations, export history and backup files are untouched, so it upgrades in place.
+
+### Six interaction changes
+
+**Press feedback**
+Buttons, cards and the bottom navigation scale slightly on press and spring back; page changes and long-press selection give a light tactile cue.
+
+**Selection that stays in sync**
+In selection mode the select-all box becomes tri-state: none, partial (a middle bar), all. Selected cards get a primary-colour outline, and "Export selected" / "Delete selected" grey out when nothing is selected.
+
+**Cards expand smoothly**
+Collapsible cards on the settings page open smoothly, the chevron rotates 180°, and the whole row is tappable rather than only the small chevron on the right.
+
+**Editing moved to a bottom sheet**
+"New / edit configuration" changed from a centre-screen dialog to a sheet sliding up from the bottom: drag it down to dismiss, and releasing halfway snaps it back. The keyboard no longer squashes the fields.
+
+**Smoother scrolling**
+The configuration and export-history pages use lazy lists, rendering only what is on screen, so long lists stay responsive.
+
+**Page transitions**
+Switching pages via the bottom navigation expands the new page outward from the bottom centre over 320ms.
+
+### Visual consistency
+
+- Both palettes gained container levels, so dark mode no longer blurs cards into one mass
+- Radius, spacing and type sizes collapsed into one set of tokens; cards have muted and outlined tiers
+- Empty states unified as icon + description + primary action
+- The title bar is fixed and no longer scrolls away with the list
+
+### Known limits
+
+- Drag-to-reorder is not supported (it would need a sort field on the configuration table; out of scope here)
+- The key diagnostics page is still a plain scrolling list, not lazily rendered
+
+### Verification
+
+- Unit tests and the build run in CI
+- No changes to the `ServiceConfig` / `ExportRecord` schema; upgrading loses no data
+
+### Supported apps
+
+**Dollhouse 0.2.2** has completed AEX 1.1 integration:
+
+- Deeplink: `dollhouse://aivora-import` (pick a configuration in Aivora → Deeplink → choose Dollhouse)
+- File: `.akcp` import, single / multiple / full set
+- AEX 1.1 carries no model list, so Dollhouse requests `/models` itself after import
+
+See `protocol/ECOSYSTEM.md` for status and registration.
+
+---
+
 ## v0.0.8 · Deeplink export and AEX 1.1
 
 This release adds a second way to hand a configuration to another app, and bumps the protocol to 1.1. **The protocol change is breaking**: 1.0 `.akcp` files cannot be imported on 0.0.8, and vice versa.

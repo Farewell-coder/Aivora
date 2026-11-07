@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Farewell-coder/Aivora/protocol/AEX-SCHEMA.json",
   "title": "AEX 1.1 Payload",
-  "description": "Aivora Exchange Protocol 1.1 解密后的配置载荷结构（Draft）。1.1 起 profiles[] 不再包含 models 与 defaultModel。",
+  "description": "Aivora Exchange Protocol 1.1 解密后的配置载荷结构（1.1 已定稿）。1.1 起 profiles[] 不再包含 models 与 defaultModel。",
   "type": "object",
   "required": ["format", "protocolVersion", "exportedAt", "exporter", "profiles"],
   "additionalProperties": true,

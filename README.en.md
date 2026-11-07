@@ -46,6 +46,9 @@ If you use several AI services, your endpoints and API keys usually end up scatt
 | Provider templates | Built-in endpoint templates for common providers, plus fully custom entries |
 | Model diagnostics | Fetches `/models`, tests each model serially, reports status, HTTP code, latency and error summary; supports cancellation and per-model retry |
 | Configuration exchange | Export an encrypted file protected by an independent credential; import requires that credential |
+| Multi-format import | Reads Chatbox, Continue, LobeChat, CC Switch, New API, Cherry Studio and plain `.env` files; format is detected from content, with a preview you tick items in before importing |
+| Export history | Every export is recorded with its full snapshot and credential; view, copy, re-export, re-share, or long-press to bulk delete |
+| Endpoint correction | Adds a missing `/v1` and strips duplicated API suffixes; official template URLs are left untouched, and candidate paths are retried when diagnostics fail |
 | Full backup | Aivora-specific encrypted backup; cross-device restore re-encrypts secrets with the new device key after an overwrite confirmation |
 | Interface | Material 3, light / dark / system theme, optional system authentication |
 
@@ -90,10 +93,10 @@ Typical use: export an encrypted backup before switching phones, then import and
 
 ### Latest release
 
-Current version: **0.0.5**
+Use the releases page as the source of truth: [github.com/Farewell-coder/Aivora/releases/latest](https://github.com/Farewell-coder/Aivora/releases/latest)
 
-- Releases: [github.com/Farewell-coder/Aivora/releases/latest](https://github.com/Farewell-coder/Aivora/releases/latest)
-- Artifact name: `Aivora-v0.0.5.apk`
+- Artifact name: `Aivora-v<version>.apk` (the version equals `versionName`)
+- Per-release detail lives in the [changelog](CHANGELOG.en.md); this page does not repeat the version number, so it cannot fall out of date.
 
 ### Installation
 
@@ -174,14 +177,15 @@ Want your app to read configurations exported by Aivora? Everything you need is 
 |---|---|
 | [Protocol overview](protocol/README.md) | Start here: what the protocol is, how to use it, how to read the docs |
 | [Specification](protocol/AEX-SPECIFICATION.md) | Container layout, field definitions, versioning, error codes |
-| [Adapter guide](protocol/AEX-ADAPTER-GUIDE.md) | Step-by-step integration, Android receiver advice and common pitfalls |
+| [Adapter guide](protocol/AEX-ADAPTER-GUIDE.md) | Step-by-step integration (file channel), Android receiver advice and common pitfalls |
+| [Deeplink integration](protocol/AEX-DEEPLINK.md) | Deeplink channel: link format, fields, Kotlin sample, testing commands and security requirements |
 | [Security model](protocol/AEX-SECURITY.md) | Crypto parameters, key derivation, boundaries, and what not to do |
 | [Payload schema](protocol/AEX-SCHEMA.json) | JSON Schema for the payload |
 | [Test and acceptance](protocol/AEX-TEST-VECTORS.md) | Acceptance checklist and negative cases |
 | [Official test vectors](protocol/test-vectors/) | Ready to run against your implementation |
 | [Examples](protocol/examples/) | Single, multiple and encrypted-package walkthroughs |
 
-**Adapters and how to register** are tracked in [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md). No third-party app has completed integration yet, so the list is empty — submissions welcome.
+**Adapters and how to register** are tracked in [protocol/ECOSYSTEM.md](protocol/ECOSYSTEM.md). **Dollhouse** has completed AEX 1.1 integration (file + deeplink), self-declared; other apps are welcome to submit via the template.
 
 ## Contributing
 
@@ -218,7 +222,7 @@ See [Changelog](CHANGELOG.en.md).
 
 Aivora is distributed under **AGPL-3.0-only**. See [LICENSE](LICENSE).
 
-Versioning note: application and protocol versions **evolve independently**. Currently app 0.0.8 · AEX 1.1 (finalised).
+Versioning note: application and protocol versions **evolve independently**. The protocol is AEX 1.1 (finalised); for the app version see [releases](https://github.com/Farewell-coder/Aivora/releases/latest).
 
 - **Protocol version rules**: a major bump is always breaking; for a minor bump, Aivora matches the version **exactly**, i.e. `protocolVersion` must equal the single version the implementation supports. 1.1 removed the model-list fields, so 1.0 and 1.1 containers are not interchangeable.
 - **The app keeps moving**: features, UI, performance and bug fixes ship continuously without requiring a protocol change.
