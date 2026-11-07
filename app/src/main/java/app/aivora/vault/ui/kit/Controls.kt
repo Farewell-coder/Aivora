@@ -194,11 +194,17 @@ fun SecondaryButton(
     }
     val source = remember { MutableInteractionSource() }
     val scale = pressScaleOf(source)
+    // 【修饰符顺序】Compose 的修饰符按书写顺序逐层包裹，越靠前越在外层。
+    //   原先写成 `background → clickable → padding → border`：
+    //   `padding` 之后的 `border` 画在**已经被内缩过的内容盒**上，
+    //   于是描边比填充块小一圈、往里缩，看起来像「按钮超出了自己的边框」。
+    //   正确顺序是「边框与背景同一个盒」：clip → background → border → 再 padding。
     Row(
         modifier
             .heightIn(min = AivoraSize.button)
             .clip(AivoraShape.inner)
             .background(c.surface)
+            .border1(borderColor)
             .clickable(
                 interactionSource = source,
                 indication = null,
@@ -206,9 +212,7 @@ fun SecondaryButton(
                 onClick = onClick,
             )
             .padding(horizontal = AivoraSpace.lg, vertical = AivoraSpace.sm)
-            .pressScaleApply(scale)
-            .then(Modifier)
-            .border1(borderColor),
+            .pressScaleApply(scale),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {

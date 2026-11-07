@@ -267,8 +267,16 @@ private fun DiagnosticsBlock(
         if (expanded) {
             ItemDivider()
             Column(Modifier.padding(horizontal = AivoraSpace.blockPadding, vertical = AivoraSpace.md)) {
-                Text(config.checkStatus.ifBlank { "未检测" }, style = AivoraType.meta,
-                    color = if (configStatusKind(config.checkStatus) == StatusKind.Danger) c.danger else c.textSecondary,
+                // 【语义色】原来只有 Danger 走色，成功/进行中一律压成次文字灰：
+                //   「检测完成 2/2 可用」是这条配置最想被看到的结果，不该和普通说明同色。
+                //   现在按整体状态取语义前景色，Neutral 才退回次文字。
+                val statusKind = configStatusKind(config.checkStatus)
+                // 先在组合上下文里取值：foreground() 是 @Composable，不能写在 when 分支里。
+                val statusColor = statusKind.foreground()
+                Text(
+                    config.checkStatus.ifBlank { "未检测" },
+                    style = AivoraType.meta,
+                    color = if (statusKind == StatusKind.Neutral) c.textSecondary else statusColor,
                 )
                 Spacer(Modifier.height(AivoraSpace.hair))
                 Text(
