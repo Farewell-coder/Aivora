@@ -190,8 +190,6 @@ LAZY_SCOPE_CALLS = {"items", "itemsIndexed", "stickyHeader"}
 SYMBOL_IMPORTS = {
     "LazyColumn": ["androidx.compose.foundation.lazy.LazyColumn"],
     "LazyRow": ["androidx.compose.foundation.lazy.LazyRow"],
-    "items": ["androidx.compose.foundation.lazy.items"],
-    "stickyHeader": ["androidx.compose.foundation.lazy.stickyHeader"],
     "rememberLazyListState": ["androidx.compose.foundation.lazy.rememberLazyListState"],
     "HorizontalDivider": ["androidx.compose.material3.HorizontalDivider"],
     "ModalBottomSheet": ["androidx.compose.material3.ModalBottomSheet"],

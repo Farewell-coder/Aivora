@@ -409,20 +409,22 @@ private fun BackupSection(
                 icon = Lucide.Export,
                 enabled = !busy,
                 modifier = Modifier.weight(1f),
-            ) {
-                scope.launch {
-                    busy = true
-                    try {
-                        exportResult = withContext(Dispatchers.IO) { repo.createBackup(prefs.getString("theme", "SYSTEM")!!) }
-                    } catch (e: Exception) { toast(e.message ?: "无法生成备份") }
-                    busy = false
-                }
-            }
+                onClick = {
+                    scope.launch {
+                        busy = true
+                        try {
+                            exportResult = withContext(Dispatchers.IO) { repo.createBackup(prefs.getString("theme", "SYSTEM")!!) }
+                        } catch (e: Exception) { toast(e.message ?: "无法生成备份") }
+                        busy = false
+                    }
+                },
+            )
             SecondaryButton(
                 "导入备份",
                 icon = Lucide.Import,
                 modifier = Modifier.weight(1f),
-            ) { opener.launch(arrayOf("application/octet-stream", "*/*")) }
+                onClick = { opener.launch(arrayOf("application/octet-stream", "*/*")) },
+            )
         }
         ItemDivider()
         Box(Modifier.padding(horizontal = AivoraSpace.blockPadding, vertical = AivoraSpace.md)) {

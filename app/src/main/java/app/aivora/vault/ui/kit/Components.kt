@@ -354,10 +354,12 @@ fun TechWell(
                 }
                 if (onCopy != null) {
                     Spacer(Modifier.width(AivoraSpace.sm))
-                    CopyAction {
-                        clipboard.setText(AnnotatedString(value))
-                        onCopy()
-                    }
+                    CopyAction(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(value))
+                            onCopy()
+                        },
+                    )
                 }
             }
         }
