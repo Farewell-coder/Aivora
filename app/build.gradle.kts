@@ -46,6 +46,8 @@ android {
 
     buildTypes {
         release {
+            applicationIdSuffix = ".vfy"
+            versionNameSuffix = "-vfy"
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
