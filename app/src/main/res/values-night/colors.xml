@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 系统深色模式下，启动窗口用深色底，避免冷启动时闪一下白 -->
-    <color name="background_light">#171018</color>
+    <!--
+      系统深色模式下，启动窗口用深色底，避免冷启动时闪一下白。
+      必须与 Kotlin 侧 ui.theme.AivoraDarkColors.background（#0F1115）逐位一致。
+    -->
+    <color name="background_light">#0F1115</color>
+    <!-- 深色下图标背景仍是白色：图标自身带白底，改深色会在裁切边缘露出黑边。 -->
+    <color name="icon_background">#FFFFFF</color>
 </resources>

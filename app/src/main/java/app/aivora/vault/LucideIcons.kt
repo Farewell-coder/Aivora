@@ -24,6 +24,7 @@ import com.composables.icons.lucide.Link2
 import com.composables.icons.lucide.List
 import com.composables.icons.lucide.Lock
 import com.composables.icons.lucide.Monitor
+import com.composables.icons.lucide.Ellipsis
 import com.composables.icons.lucide.Moon
 import com.composables.icons.lucide.Play
 import com.composables.icons.lucide.Plus
@@ -130,4 +131,12 @@ object Lucide {
     val History: ImageVector get() = LucideSet.History
     /** 项目仓库。 */
     val Github: ImageVector get() = LucideSet.Github
+
+    /**
+     * 更多操作：官方 ellipsis（横向三点）。
+     *
+     * 之前「更多」菜单借用 [ChevronDown]，视觉上读作「展开本行」，与「打开操作菜单」
+     * 是两种不同预期；而且行尾箭头与折叠卡的箭头同形，用户分不清点哪个会发生什么。
+     */
+    val More: ImageVector get() = LucideSet.Ellipsis
 }

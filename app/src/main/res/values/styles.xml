@@ -5,12 +5,15 @@
       状态栏 / 导航栏设为透明，配合 MainActivity 的 enableEdgeToEdge()，
       应用一启动就不会出现系统默认的白色状态栏条带。
       windowBackground 与浅色主题背景一致，避免冷启动闪白。
+
+      【为什么不再写 windowLightStatusBar】系统栏图标颜色必须随「应用内选的外观」
+        变化（浅色/深色/跟随系统），XML 里写死 true 只反映系统深浅，
+        应用设成深色而系统仍是浅色时图标就会看不清。现在由 ui.theme 的
+        SystemBars(dark) 在 Composition 内实时设置，这里只管启动窗口本身。
     -->
     <style name="Theme.Aivora" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowBackground">@color/background_light</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
